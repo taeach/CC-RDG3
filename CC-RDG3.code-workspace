@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"name": "CC-RDG3",
+			"path": "."
+		},
+		{
+			"name": "CCAII-EE",
+			"path": "../CCAII-EE"
+		},
+		{
+			"name": "AQFPLogic-Optimization",
+			"path": "../AQFPLogic-Optimization/optimizer"
+		}
+	],
+	"settings": {
+		"git.ignoreLimitWarning": true
+	}
+}
