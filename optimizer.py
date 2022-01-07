@@ -1,97 +1,78 @@
 # Optimizer
 # version 1.0 (2021/12/17)
 
-import os                               # standard library
-import sys                              # standard library
+import os
+import sys
 import math             as mt
 import numpy            as np
 import pandas           as pd
+from suboptimizer       import Population, GA, PSO
+from utils              import Stdio, log
 
-from logger import Stdio
 ''' For Function Annotations '''
-import config           as cf
-import function         as fc
-from suboptimizer       import *
+from config             import Configuration
+from function           import Function
 
 
-class CCRDG3(PSO):
+# class CCEA(eval(Configuration().subopt_name)):
+class CCEA(GA):
+    '''CCEA (Cooperative Co-Evolutionary Algorithm)
+
+    Attributes:
+        cnf : Configuration class
+        fnc : Function class
+
+    HowToUse:
+    - Initialize(blank_opt)
+    - update(blank_opt) (repeat for termination)
     '''
-        ## CC-RDG3
-
-        Attributes
-        ----------
-        `cnf` : Configuration class
-
-        `fnc` : Function class
-
-        Using Method
-        ------------
-        - Main execution
-            - `initialize(blank_opt)` -->  `update(blank_opt)` (repeat for termination)
-    '''
-    def __init__(self, cnf:cf.Configuration, fnc:fc.Function) -> None:
+    def __init__(self, cnf:Configuration, fnc:Function) -> None:
         super().__init__(cnf, fnc)
         self.pop = Population()
         # static grouping
-        self.max_div = self.fnc.layers
-        self.blank_opt = False
+        self.max_div = self.cnf.max_div
         self.init_evals = 0
-        # cell size
-        self.cell_size = self.fnc.cell_size.copy()
 
 
-    def initialize(self, blank_opt:bool=True) -> None:
-        '''
-            initialize method (external reference)
-            (one-call -> one-evaluation)
+    def initialize(self) -> None:
+        '''initialize method (external reference)
+           (one-call -> one-evaluation)
         '''
         _pop = self.indices['pop']
         if _pop == 0:
             # set opt type
-            self.setOptType(self.cnf.function_type)
-            # grouping method : None
-            seps, nonseps = self.grouping()
-            self.group = [seps.copy()]  if seps != [] else []
-            if self.cnf.nonseps_div:
-                nonseps = nonseps if isinstance(nonseps, list) else [nonseps]
-                # max_groupsize division
-                for _nonsep in nonseps:
-                    if len(_nonsep) > self.cnf.max_groupsize:
-                        loop = mt.ceil(len(_nonsep)/self.cnf.max_groupsize)
-                        for _loop in range(loop):
-                            self.group.append(_nonsep[_loop*self.cnf.max_groupsize:(_loop+1)*self.cnf.max_groupsize-1])
-                    else:
-                        self.group.append(_nonsep)
-                self.max_div = len(self.group)
-            else:
-                self.group.extend(nonseps)
+            self.setOptType(self.fnc.prob_name)
+            # grouping
+            if self.cnf.group_name == 'static':
+                pass
+            elif self.cnf.group_name in ('RDG2','RDG3'):
+                seps, nonseps = self.grouping(self.RDG3)
+                self.group = [seps.copy()]  if seps != [] else []
+                if self.cnf.nonseps_div:
+                    nonseps = nonseps if isinstance(nonseps, list) else [nonseps]
+                    # max_groupsize division
+                    for _nonsep in nonseps:
+                        if len(_nonsep) > self.cnf.max_groupsize:
+                            loop = mt.ceil(len(_nonsep)/self.cnf.max_groupsize)
+                            for _loop in range(loop):
+                                self.group.append(_nonsep[_loop*self.cnf.max_groupsize:(_loop+1)*self.cnf.max_groupsize-1])
+                        else:
+                            self.group.append(_nonsep)
+                    self.max_div = len(self.group)
+                else:
+                    self.group.extend(nonseps)
             # initialize models
             self.initializeParameter()
             # initialize population
             self.pop = self.initializePopulation(self.pop)
-            if self.cnf.abbrev_solution:
-                self.pop.x = [ self.encodeCC(self.pop.x[_pop])  for _pop in range(len(self.pop.x)) ]
-                self.pop.x_best = self.encodeCC(self.pop.x_best)
-            # blank optimization
-            if not self.blank_opt and blank_opt:
-                self.pop = self.fillPositionwithBlank(self.pop)
 
         # evaluate x
-        returns = self.getFitness(self.pop.x[_pop])
-        # re-evaluation when error occurs
-        if returns == 'No Fitness':
-            for reeval in range(self.cnf.max_reeval):
-                returns = self.getFitness(self.pop.x[_pop])
-                if returns == 'No Fitness':
-                    break
-            else:
-                print(f'[Optimizer] Error: Re-evaluate fitness for {self.cnf.max_reeval}-times, but return no fitness value in {self.fnc.prob_name} (class {self.__class__.__name__})', file=sys.stderr)
-                raise Exception(f'Error: Re-evaluate fitness for {self.cnf.max_reeval}-times, but return no fitness value in {self.fnc.prob_name} (class {self.__class__.__name__})')
+        if isinstance(f_new:=self.getFitness(self.pop.x[_pop]),float):
+            self.pop.f_new = f_new
+            self.pop.f[_pop] = f_new
         else:
-            # no fitness -> pass
-            pass
-        self.pop.f_new, self.pop.f_org_new, self.pop.NoVW_new, self.pop.NoVL_new, self.pop.totalWL_new, self.pop.calc_time = returns
-        self.pop.f[_pop] = self.pop.f_new
+            log('Optimizer', f'Error: {f_new}', output=sys.stderr)
+            raise Exception(f'Error: {f_new}')
         # update x_best, f_best
         best_index = self.getBestIndices(self.pop.f,1)
         self.pop = self.updateBest(self.pop, self.pop.x[best_index], self.pop.f[best_index])
@@ -104,29 +85,28 @@ class CCRDG3(PSO):
             self.indices['div'], self.indices['pop'] = 0, 0
 
 
-    def update(self, blank_opt:bool=True) -> None:
+    def update(self) -> None:
+        '''update method (external reference)
+           (one-call -> one-evaluation)
         '''
-            update method (external reference)
-            (one-call -> one-evaluation)
-        '''
-        if not self.blank_opt and blank_opt:
-            self.pop = self.fillPositionwithBlank(self.pop)
         self.updateParameter()
         self.pop = self.updatePopulation(self.pop)
         self.updateIndices()
 
 
-    def grouping(self) -> tuple[list,list]:
+    def grouping(self, grouping_fnc:function) -> tuple[list]:
+        '''grouping by any grouping method
         '''
-            grouping by any grouping method
-        '''
-        group_family, group_name = 'SG', 'layer'
-        group_pdir = Stdio.makeDirectory(self.cnf.opt_path, self.cnf.dirname['group'], confirm=False)
+        if grouping_fnc in ('RDG3'):
+            group_family = 'DG'
+        elif grouping_fnc in ('SG'):
+            group_family = 'SG'
+        group_pdir = Stdio.makeDirectory(self.cnf.path_out, self.cnf.dirname['group'], confirm=False)
         group_dir = Stdio.makeDirectory(group_pdir, group_family, confirm=False)
-        group_file = os.path.join(group_dir, f'group_{group_name}_{self.fnc.prob_name}.csv')
+        group_file = os.path.join(group_dir, f'group_{self.cnf.group_name}_{self.fnc.prob_name}.csv')
         # Exist group file -> Import
         if os.path.isfile(group_file):
-            print('[Optimizer] import group from {} ...'.format(group_file.split(os.path.sep)[-1]))
+            log('Optimizer', f'Import group from {os.path.basename(group_file)} ...')
             # import seps and nonseps group from file
             df = Stdio.readDatabase(group_file).T
             # data organization
@@ -141,12 +121,11 @@ class CCRDG3(PSO):
             self.fnc.total_evals += group_evals
         # Not exist group file -> Calculate and output
         else:
-            print('[Optimizer] calculate group ...')
+            log('Optimizer', f'Calculate group by {self.cnf.group_name} ...')
             # calculate seps and nonseps group
             _df = {}
             group_evals_s = self.fnc.total_evals
-            seps = []
-            nonseps = [ _dom for _dom in self.fnc.domain.values() ]
+            seps, nonseps = grouping_fnc()
             group_evals_e = self.fnc.total_evals
             # data organization
             _df['evals'] = pd.DataFrame([group_evals_e - group_evals_s], index=['total_evals'])
@@ -168,24 +147,23 @@ class CCRDG3(PSO):
 
 
 if __name__ == '__main__':
-    import config           as cf
-    import function         as fc
-    import logger           as lg
-    import dataprocessing   as dp
+    from config     import Configuration
+    from function   import Function
+    from logger     import DataLogger
+    from processing import DataProcessing
     import os
     # (1) working directory movement
-    from logger import Stdio
+    from utils import Stdio
     Stdio.moveWorkingDirectory()
 
-    cnf = cf.Configuration()
-    log_settings = lg.LogData(cnf)
+    cnf = Configuration()
+    log_settings = DataLogger(cnf)
 
     i,j = 0,0
-    log = lg.LogData(cnf, cnf.prob_name[i])
-    fnc = fc.Function(cnf, cnf.prob_name[i],1)
+    log = DataLogger(cnf, cnf.prob_name[i])
+    fnc = Function(cnf, cnf.prob_name[i],1)
     opt = eval('{}(cnf, fnc)'.format(cnf.opt_name.replace('-','')))
-    plt = dp.Plot(cnf, fnc)
     cnf.setRandomSeed(seed=j+1)
     # initialize optimizer
-    opt.initialize(opt.blankOpt(fnc.total_evals))
+    opt.initialize()
 
