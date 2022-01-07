@@ -42,6 +42,7 @@ class Function:
 
         self.setFunction()
         self.extendDomain()
+        print(isinstance(self,str))
         log(self.__class__.__name__, f'\t\t[ Problem : {prob_name} ]\t\t')
 
 

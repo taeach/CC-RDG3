@@ -1,0 +1,12 @@
+numpy
+pandas
+matplotlib
+joblib
+tqdm
+pyyaml
+networkx
+sklearn
+# for CEC2010LSGO, CEC2017
+# cython
+# git+https://github.com/YNU-NakataLab/BenchmarkFunction.git#egg=cec2010lsgo&subdirectory=CEC2010LSGO
+# git+https://github.com/YNU-NakataLab/BenchmarkFunction.git#egg=cec2017&subdirectory=CEC2017
