@@ -1,9 +1,12 @@
-# Function Distributer
-# version 1.0 (2021/12/17)
+# Function
+# version 1.1 (2022/01/07)
 
+import os
 import math  as mt
 import numpy as np
+from utils import log
 
+''' For Annotations '''
 from config import Configuration
 
 
@@ -17,17 +20,17 @@ class Function:
         axis_range (list or 2-d ndarray): Axis range of problem
         evaluate (function): problem_name problem to evaluate x
         total_evals (int): Total fitness evaluation(FEs)
-        xopt (1-d ndarray): global optima for 
+        xopt (1-d ndarray): global optima
 
     Note:
         Problem/Function:
         - Basic Benchmark Function (F1~F8)
             ※ variable dimension (any)
-        - LSGO CEC'2013 Benchmark Function (LSGO_F1~LSGO_F15)
+        - LSGO CEC'2013 Benchmark Function (LSGO2013_F1~LSGO2013_F15)
             ※ fixed dimension (905,1000D)
     '''
 
-    def __init__(self, cnf:Configuration, prob_name:str, prob_dim:int):
+    def __init__(self, cnf:Configuration, prob_name:str, prob_dim:int=1000):
         self.cnf            = cnf
         self.prob_name      = prob_name
         self.prob_dim       = prob_dim
@@ -39,7 +42,7 @@ class Function:
 
         self.setFunction()
         self.extendDomain()
-        print('\t\t[ Problem : {} ]\t\t'.format(prob_name))
+        log(self.__class__.__name__, f'\t\t[ Problem : {prob_name} ]\t\t')
 
 
     def setFunction(self) -> None:
@@ -73,154 +76,145 @@ class Function:
         elif self.prob_name == 'F9':
             self.evaluate = self.F9
             self.axis_range  = [-100,100]
-        elif self.prob_name == 'LSGO_F1':
+        elif self.prob_name == 'LSGO2013_F1':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F1_NOISE
+                self.evaluate = self.LSGO2013_F1_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F1
+                self.evaluate = self.LSGO2013_F1
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F2':
+        elif self.prob_name == 'LSGO2013_F2':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F2_NOISE
+                self.evaluate = self.LSGO2013_F2_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F2
+                self.evaluate = self.LSGO2013_F2
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-5, 5]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F3':
+        elif self.prob_name == 'LSGO2013_F3':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F3_NOISE
+                self.evaluate = self.LSGO2013_F3_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F3
+                self.evaluate = self.LSGO2013_F3
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-32, 32]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F4':
+        elif self.prob_name == 'LSGO2013_F4':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F4_NOISE
+                self.evaluate = self.LSGO2013_F4_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F4
+                self.evaluate = self.LSGO2013_F4
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100, 100]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F5':
+        elif self.prob_name == 'LSGO2013_F5':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F5_NOISE
+                self.evaluate = self.LSGO2013_F5_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F5
+                self.evaluate = self.LSGO2013_F5
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-5,5]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F6':
+        elif self.prob_name == 'LSGO2013_F6':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F6_NOISE
+                self.evaluate = self.LSGO2013_F6_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F6
+                self.evaluate = self.LSGO2013_F6
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-32,32]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F7':
+        elif self.prob_name == 'LSGO2013_F7':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F7_NOISE
+                self.evaluate = self.LSGO2013_F7_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F7
+                self.evaluate = self.LSGO2013_F7
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F7M':
+        elif self.prob_name == 'LSGO2013_F8':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F7M_NOISE
+                self.evaluate = self.LSGO2013_F8_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                pass
+                self.evaluate = self.LSGO2013_F8
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F8':
+        elif self.prob_name == 'LSGO2013_F9':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F8_NOISE
+                self.evaluate = self.LSGO2013_F9_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F8
+                self.evaluate = self.LSGO2013_F9
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
-            self.axis_range  = [-100,100]
-            self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F9':
-            if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F9_NOISE
-            elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F9
-            else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-5,5]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F10':
+        elif self.prob_name == 'LSGO2013_F10':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F10_NOISE
+                self.evaluate = self.LSGO2013_F10_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F10
+                self.evaluate = self.LSGO2013_F10
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-32,32]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F11':
+        elif self.prob_name == 'LSGO2013_F11':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F11_NOISE
+                self.evaluate = self.LSGO2013_F11_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F11
+                self.evaluate = self.LSGO2013_F11
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F12':
+        elif self.prob_name == 'LSGO2013_F12':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F12_NOISE
+                self.evaluate = self.LSGO2013_F12_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F12
+                self.evaluate = self.LSGO2013_F12
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
-        elif self.prob_name == 'LSGO_F13':
+        elif self.prob_name == 'LSGO2013_F13':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F13_NOISE
+                self.evaluate = self.LSGO2013_F13_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F13
+                self.evaluate = self.LSGO2013_F13
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             # 905D because of overlapping
             self.prob_dim = 905
-        elif self.prob_name == 'LSGO_F14':
+        elif self.prob_name == 'LSGO2013_F14':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F14_NOISE
+                self.evaluate = self.LSGO2013_F14_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F14
+                self.evaluate = self.LSGO2013_F14
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             # 905D because of overlapping
             self.prob_dim = 905
-        elif self.prob_name == 'LSGO_F15':
+        elif self.prob_name == 'LSGO2013_F15':
             if self.cnf.prob_env_noise == 'on' :
-                self.evaluate = self.LSGO_F15_NOISE
+                self.evaluate = self.LSGO2013_F15_NOISE
             elif self.cnf.prob_env_noise == 'off' :
-                self.evaluate = self.LSGO_F15
+                self.evaluate = self.LSGO2013_F15
             else :
-                print('Error: Do not exist prob_env_noise {} (class {})'.format(self.cnf.prob_env_noise,self.__class__.__name__))
+                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         else:
-            print('Error: Do not exist Function {} (class {})'.format(self.prob_name,self.__class__.__name__))
+            log(self.__class__.__name__, f'Error: Do not exist prob_name "{self.prob_name}"')
             return None
 
     def doEvaluate(self, x:np.ndarray):
@@ -460,42 +454,46 @@ class Function:
 
     ''' LSGO CEC'2013 Data File Import '''
     def getDatafile(self):
-        folder_name = 'cec2013lsgo_datafile'
-        xopt_only_fnc = ['LSGO_F1', 'LSGO_F2', 'LSGO_F3', 'LSGO_F12', 'LSGO_F15']
+        folder_name = os.path.join(self.cnf.dirname['env'], self.cnf.dirname['cec2013lsgo'])
+        xopt_only_fnc = ['LSGO2013_F1', 'LSGO2013_F2', 'LSGO2013_F3', 'LSGO2013_F12', 'LSGO2013_F15']
 
         if self.prob_name in xopt_only_fnc :
-            # xoptのみインポート
+            # import only xopt
             fnc_name = self.prob_name.split('_')[1]
-            # 最適解 xopt
             self.xopt    = np.loadtxt('{}/{}-xopt.txt'.format(folder_name, fnc_name))
         else :
-            # xopt, p, s, w, R25, R50, R100をインポート
+            # import xopt, p, s, w, R25, R50, R100
             fnc_name = self.prob_name.split('_')[1]
-            # 最適解 xopt
+            # xopt
             self.xopt    = np.loadtxt('{}/{}-xopt.txt'.format(folder_name, fnc_name))
-            # 次元順列 p = [1,1000] -> [0,999]
+            # dimension permutation p = [1,1000] -> [0,999]
             self.p       = np.loadtxt('{}/{}-p.txt'.format(folder_name, fnc_name), delimiter=',', dtype='int') - 1
-            # サブコンポーネントサイズ s
+            # subcomponent size s
             self.s       = np.loadtxt('{}/{}-s.txt'.format(folder_name, fnc_name), dtype='int')
-            # 次元重み w
+            # weight of dimension w
             self.w       = np.loadtxt('{}/{}-w.txt'.format(folder_name, fnc_name))
-            # 回転行列（25D）
+            # rotation matrix（25D）
             self.R25     = np.loadtxt('{}/{}-R25.txt'.format(folder_name, fnc_name), delimiter=',')
-            # 回転行列（50D）
+            # rotation matrix（50D）
             self.R50     = np.loadtxt('{}/{}-R50.txt'.format(folder_name, fnc_name), delimiter=',')
-            # 回転行列（100D）
+            # rotation matrix（100D）
             self.R100    = np.loadtxt('{}/{}-R100.txt'.format(folder_name, fnc_name), delimiter=',')
 
 
     ''' LSGO CEC'2013 Benchmark Function '''
-    ''' Noise-On '''
+    ''' [1] Noise-On '''
     ''' ----- 1. Fully-separable Function ----- '''
-    # F1 : Shifted Elliptic Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F1_NOISE(self, x):
+    def LSGO2013_F1_NOISE(self, x:np.ndarray):
+        '''F1 : Shifted Elliptic Function (1000D)
+        Separability    : Fully-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -505,12 +503,17 @@ class Function:
         ret = self.F8(z)
         return ret
 
-    # F2 : Shifted Rastrigin Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully-Separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F2_NOISE(self, x):
+    def LSGO2013_F2_NOISE(self, x:np.ndarray):
+        '''F2 : Shifted Rastrigin Function (1000D)
+        Separability    : Fully-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -521,12 +524,17 @@ class Function:
         ret = self.F4(z)
         return ret
 
-    # F3 : Shifted Ackley Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully-Separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F3_NOISE(self, x):
+    def LSGO2013_F3_NOISE(self, x:np.ndarray):
+        '''F3 : Shifted Ackley Function (1000D)
+        Separability    : Fully-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -538,12 +546,17 @@ class Function:
         return ret
 
     ''' ----- 2. Partially Additively Separable Function Ⅰ ----- '''
-    # F4 : 7-nonseparable, 1-separable Shifted and Rotated Elliptic Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F4_NOISE(self, x):
+    def LSGO2013_F4_NOISE(self, x:np.ndarray):
+        '''F4 : 7-nonseparable, 1-separable Shifted and Rotated Elliptic Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -568,12 +581,17 @@ class Function:
         ret += self.F8(z)
         return ret
 
-    # F5 : 7-nonseparable, 1-separable Shifted and Rotated Rastrigin Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F5_NOISE(self, x):
+    def LSGO2013_F5_NOISE(self, x:np.ndarray):
+        '''F5 : 7-nonseparable, 1-separable Shifted and Rotated Rastrigin Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -602,12 +620,17 @@ class Function:
         ret += self.F4(z)
         return ret
 
-    # F6 : 7-nonseparable, 1-separable Shifted and Rotated Ackley Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F6_NOISE(self, x):
+    def LSGO2013_F6_NOISE(self, x:np.ndarray):
+        '''F6 : 7-nonseparable, 1-separable Shifted and Rotated Ackley Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -636,42 +659,17 @@ class Function:
         ret += self.F3(z)
         return ret
 
-    # F7 : 7-nonseparable, 1-separable Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F7_NOISE(self, x):
-        dim = len(x)
-        if self.xopt is None :
-            self.getDatafile()
-        ret, c = 0., 0
-        ### 7-nonseparable ###
-        for i in range(len(self.s)) :
-            # Sampling Vector
-            y = x[self.p[c:c+self.s[i]]] - self.xopt[self.p[c:c+self.s[i]]]
-            # Rotation & Transform
-            if self.s[i] == 25 :
-                z = self.Tasy( self.Tosz( self.R25 @ y ), beta=0.2)
-            elif self.s[i] == 50 :
-                z = self.Tasy( self.Tosz( self.R50 @ y ), beta=0.2)
-            elif self.s[i] == 100 :
-                z = self.Tasy( self.Tosz( self.R100 @ y ), beta=0.2)
-            c += self.s[i]
-            # Schwefel Function 1.2
-            ret += self.w[i] * self.F9(z)
-        ### 1-separable ###
-        z = self.Tasy( self.Tosz( x[self.p[c:]] - self.xopt[self.p[c:]] ), beta=0.2)
-        # Sphere Function
-        ret += self.F1(z)
-        return ret
+    def LSGO2013_F7_NOISE(self, x:np.ndarray):
+        '''F7 : 7-nonseparable, 1-separable Shifted Schwefel Function 1.2 (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
 
-    # F7M : 7-nonseparable, 1-separable Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F7M_NOISE(self, x):
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -692,17 +690,24 @@ class Function:
             ret += self.w[i] * self.F9(z)
         ### 1-separable ###
         z = self.Tasy( self.Tosz( x[self.p[c:]] - self.xopt[self.p[c:]] ), beta=0.2)
-        # Schwefel Function 1.2
-        ret += self.F9(z)
+        # Sphere Function (based on original paper, python module "cec2013lsgo")
+        ret += self.F1(z)
+        # Schwefel Function 1.2 (based on function name)
+        # ret += self.F9(z)
         return ret
 
     ''' ----- 3. Partially Additively Separable Function Ⅱ ----- '''
-    # F8 : 20-nonseparable Shifted and Rotated Elliptic Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F8_NOISE(self, x):
+    def LSGO2013_F8_NOISE(self, x:np.ndarray):
+        '''F8 : 20-nonseparable Shifted and Rotated Elliptic Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -723,12 +728,17 @@ class Function:
             ret += self.w[i] * self.F8(z)
         return ret
 
-    # F9 : 20-nonseparable Shifted and Rotated Rastrigin Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F9_NOISE(self, x):
+    def LSGO2013_F9_NOISE(self, x:np.ndarray):
+        '''F9 : 20-nonseparable Shifted and Rotated Rastrigin Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -752,12 +762,17 @@ class Function:
             ret += self.w[i] * self.F4(z)
         return ret
 
-    # F10 : 20-nonseparable Shifted and Rotated Ackley Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F10_NOISE(self, x):
+    def LSGO2013_F10_NOISE(self, x:np.ndarray):
+        '''F10 : 20-nonseparable Shifted and Rotated Ackley Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -781,12 +796,17 @@ class Function:
             ret += self.w[i] * self.F3(z)
         return ret
 
-    # F11 : 20-nonseparable Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F11_NOISE(self, x):
+    def LSGO2013_F11_NOISE(self, x:np.ndarray):
+        '''F11 : 20-nonseparable Shifted Schwefel Function 1.2 (1000D)
+        Separability    : Partially-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -808,12 +828,17 @@ class Function:
         return ret
 
     ''' ----- 4. Overlapping Function ----- '''
-    # F12 : Shifted Rosenbrock Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F12_NOISE(self, x):
+    def LSGO2013_F12_NOISE(self, x:np.ndarray):
+        '''F12 : Shifted Rosenbrock Function (1000D)
+        Separability    : Separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -823,12 +848,17 @@ class Function:
         ret = self.F2(z)
         return ret
 
-    # F13 : Shifted Schwefel Function 1.2 with Conforming Overlapping Subcomponents (905D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Non-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F13_NOISE(self, x):
+    def LSGO2013_F13_NOISE(self, x:np.ndarray):
+        '''F13 : Shifted Schwefel Function 1.2 with Conforming Overlapping Subcomponents (905D)
+        Separability    : Non-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         # Overlap Size
         m = 5
@@ -851,12 +881,17 @@ class Function:
             ret += self.w[i] * self.F9(z)
         return ret
 
-    # F14 : Shifted Schwefel Function 1.2 with Conflicting Overlapping Subcomponents (905D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Non-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F14_NOISE(self, x):
+    def LSGO2013_F14_NOISE(self, x:np.ndarray):
+        '''F14 : Shifted Schwefel Function 1.2 with Conflicting Overlapping Subcomponents (905D)
+        Separability    : Non-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         # Overlap Size
         m = 5
@@ -880,12 +915,17 @@ class Function:
         return ret
 
     ''' ----- 5. Fully Non-separable Function ----- '''
-    # F15 : Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully Non-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F15_NOISE(self, x):
+    def LSGO2013_F15_NOISE(self, x:np.ndarray):
+        '''F15 : Shifted Schwefel Function 1.2 (1000D)
+        Separability    : Fully Non-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -896,14 +936,19 @@ class Function:
         return ret
 
 
-    ''' Noise-Off '''
+    ''' [2] Noise-Off '''
     ''' ----- 1. Fully-separable Function ----- '''
-    # F1 : Shifted Elliptic Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F1(self, x):
+    def LSGO2013_F1(self, x:np.ndarray):
+        '''F1 : Shifted Elliptic Function (1000D)
+        Separability    : Fully-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -913,12 +958,17 @@ class Function:
         ret = self.F8(z)
         return ret
 
-    # F2 : Shifted Rastrigin Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully-Separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F2(self, x):
+    def LSGO2013_F2(self, x:np.ndarray):
+        '''F2 : Shifted Rastrigin Function (1000D)
+        Separability    : Fully-Separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -928,12 +978,17 @@ class Function:
         ret = self.F4(z)
         return ret
 
-    # F3 : Shifted Ackley Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully-Separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F3(self, x):
+    def LSGO2013_F3(self, x:np.ndarray):
+        '''F3 : Shifted Ackley Function (1000D)
+        Separability    : Fully-Separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -944,12 +999,17 @@ class Function:
         return ret
 
     ''' ----- 2. Partially Additively Separable Function Ⅰ ----- '''
-    # F4 : 7-nonseparable, 1-separable Shifted and Rotated Elliptic Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F4(self, x):
+    def LSGO2013_F4(self, x:np.ndarray):
+        '''F4 : 7-nonseparable, 1-separable Shifted and Rotated Elliptic Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -974,12 +1034,17 @@ class Function:
         ret += self.F8(z)
         return ret
 
-    # F5 : 7-nonseparable, 1-separable Shifted and Rotated Rastrigin Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F5(self, x):
+    def LSGO2013_F5(self, x:np.ndarray):
+        '''F5 : 7-nonseparable, 1-separable Shifted and Rotated Rastrigin Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1004,12 +1069,17 @@ class Function:
         ret += self.F4(z)
         return ret
 
-    # F6 : 7-nonseparable, 1-separable Shifted and Rotated Ackley Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F6(self, x):
+    def LSGO2013_F6(self, x:np.ndarray):
+        '''F6 : 7-nonseparable, 1-separable Shifted and Rotated Ackley Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1034,12 +1104,17 @@ class Function:
         ret += self.F3(z)
         return ret
 
-    # F7 : 7-nonseparable, 1-separable Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F7(self, x):
+    def LSGO2013_F7(self, x:np.ndarray):
+        '''F7 : 7-nonseparable, 1-separable Shifted Schwefel Function 1.2 (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1066,12 +1141,17 @@ class Function:
 
 
     ''' ----- 3. Partially Additively Separable Function Ⅱ ----- '''
-    # F8 : 20-nonseparable Shifted and Rotated Elliptic Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F8(self, x):
+    def LSGO2013_F8(self, x:np.ndarray):
+        '''F8 : 20-nonseparable Shifted and Rotated Elliptic Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1092,12 +1172,17 @@ class Function:
             ret += self.w[i] * self.F8(z)
         return ret
 
-    # F9 : 20-nonseparable Shifted and Rotated Rastrigin Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F9(self, x):
+    def LSGO2013_F9(self, x:np.ndarray):
+        '''F9 : 20-nonseparable Shifted and Rotated Rastrigin Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1118,12 +1203,17 @@ class Function:
             ret += self.w[i] * self.F4(z)
         return ret
 
-    # F10 : 20-nonseparable Shifted and Rotated Ackley Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F10(self, x):
+    def LSGO2013_F10(self, x:np.ndarray):
+        '''F10 : 20-nonseparable Shifted and Rotated Ackley Function (1000D)
+        Separability    : Partially-separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1144,12 +1234,17 @@ class Function:
             ret += self.w[i] * self.F3(z)
         return ret
 
-    # F11 : 20-nonseparable Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Partially-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F11(self, x):
+    def LSGO2013_F11(self, x:np.ndarray):
+        '''F11 : 20-nonseparable Shifted Schwefel Function 1.2 (1000D)
+        Separability    : Partially-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1171,12 +1266,17 @@ class Function:
         return ret
 
     ''' ----- 4. Overlapping Function ----- '''
-    # F12 : Shifted Rosenbrock Function (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Separable
-    ##    Function Form    |   Multimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F12(self, x):
+    def LSGO2013_F12(self, x:np.ndarray):
+        '''F12 : Shifted Rosenbrock Function (1000D)
+        Separability    : Separable
+        Function Form   : Multimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1186,12 +1286,17 @@ class Function:
         ret = self.F2(z)
         return ret
 
-    # F13 : Shifted Schwefel Function 1.2 with Conforming Overlapping Subcomponents (905D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Non-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F13(self, x):
+    def LSGO2013_F13(self, x:np.ndarray):
+        '''F13 : Shifted Schwefel Function 1.2 with Conforming Overlapping Subcomponents (905D)
+        Separability    : Non-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         # Overlap Size
         m = 5
@@ -1214,12 +1319,17 @@ class Function:
             ret += self.w[i] * self.F9(z)
         return ret
 
-    # F14 : Shifted Schwefel Function 1.2 with Conflicting Overlapping Subcomponents (905D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Non-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F14(self, x):
+    def LSGO2013_F14(self, x:np.ndarray):
+        '''F14 : Shifted Schwefel Function 1.2 with Conflicting Overlapping Subcomponents (905D)
+        Separability    : Non-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         # Overlap Size
         m = 5
@@ -1243,12 +1353,17 @@ class Function:
         return ret
 
     ''' ----- 5. Fully Non-separable Function ----- '''
-    # F15 : Shifted Schwefel Function 1.2 (1000D)
-    ##  ------------------ | ----------------------------
-    ##     Separability    |   Fully Non-separable
-    ##    Function Form    |   Unimodal
-    ##  ------------------ | ----------------------------
-    def LSGO_F15(self, x):
+    def LSGO2013_F15(self, x:np.ndarray):
+        '''F15 : Shifted Schwefel Function 1.2 (1000D)
+        Separability    : Fully Non-separable
+        Function Form   : Unimodal
+
+        Args:
+            x (np.ndarray): solution
+
+        Returns:
+            float: fitness value
+        '''
         dim = len(x)
         if self.xopt is None :
             self.getDatafile()
@@ -1261,11 +1376,13 @@ class Function:
 
 ''' main '''
 if __name__ == '__main__':
-    import config as cf
-    import function as fc
-    import logger as lg
-
-    cnf = cf.Configuration()
-    log = lg.LogData(cnf, cnf.prob_name[0])
-    fnc = fc.Function(cnf, cnf.prob_name[0])
-    fnc.resetTotalEvals()
+    '''sample fitness evaluation
+    '''
+    from config import Configuration
+    from function import Function
+    cnf = Configuration()
+    x = np.array([0]*1000)
+    for prob_name in cnf.prob_name:
+        fnc = Function(cnf, prob_name, cnf.prob_dim)
+        f = fnc.doEvaluate(x)
+        log(prob_name,f'f: {f}')
