@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.0 (2021/12/24)
+# version 1.1 (2022/01/12)
 
 import  os                       # standard library
 import  re                       # standard library
@@ -80,6 +80,12 @@ class DataLogger:
             self.timer = None
         else:
             print(f'[LogData] Error: Try again after starting the stopwatch. [ ? -> stopStopwatch] (class {self.__class__.__name__})', file=sys.stderr)
+
+
+    def addExeTime(self, exe_time:int):
+        '''Add exe-time counter
+        '''
+        self.exe_time += exe_time
 
 
     def outSetting(self, timing:str, stdout:bool=True, timer:bool=True):
