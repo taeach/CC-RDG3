@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.0 (2021/12/24)
+# version 1.1 (2022/01/12)
 
 # standard library
 import sys
@@ -56,6 +56,7 @@ class OptimizerCore:
         self.indices = { 'div': 0, 'pop': 0 }
         # group
         self.group = []
+        self.subdim = []
 
 
     '''
@@ -90,7 +91,7 @@ class OptimizerCore:
         elif self.cnf.opt_type == 'max':
             return True if value_1 > value_2 else False
         else:
-            log('OptimizerCore', f'Error: Invalid opt_type "{self.cnf.opt_type}".', output=sys.stderr)
+            log(self, f'Error: Invalid opt_type "{self.cnf.opt_type}".', output=sys.stderr)
             sys.exit(1)
 
 
@@ -118,7 +119,7 @@ class OptimizerCore:
         elif isinstance(x, np.ndarray) and x.ndim ==1:
             return self.fnc.doEvaluate(x)
         else:
-            log('OptimizerCore', f'Error: Invalid type argument in getFitness(). {type(x)}', output=sys.stderr)
+            log(self, f'Error: Invalid type argument in getFitness(). {type(x)}', output=sys.stderr)
             return 'Invalid Input'
 
 
@@ -157,7 +158,7 @@ class OptimizerCore:
         elif self.cnf.opt_type == 'max':
             return np.argsort(fs)[-1] if n_output==1 else np.argsort(fs)[-n_output:][::-1]
         else:
-            log('OptimizerCore', f'Error: Invalid opt_type "{self.cnf.opt_type}".', output=sys.stderr)
+            log(self, f'Error: Invalid opt_type "{self.cnf.opt_type}".', output=sys.stderr)
             sys.exit(1)
 
     '''
@@ -183,34 +184,86 @@ class OptimizerCore:
         elif self.cnf.fitness_assignment == 'current':
             pop.f[_pop] = pop.f_new
         else:
-            log('OptimizerCore', f'Error: Invalid fitness assignment ({self.cnf.fitness_assignment})', output=sys.stderr)
+            log(self, f'Error: Invalid fitness assignment ({self.cnf.fitness_assignment})', output=sys.stderr)
         return pop
 
     def updateIndices(self) -> None:
-        '''
-            update indices of individual
+        '''update indices of individual
         '''
         self.indices['pop'] += 1
         if self.indices['pop'] >= self.cnf.max_pop:
             self.indices['div'] = (self.indices['div'] + 1) % self.max_div
             self.indices['pop'] = 0
 
-    def StaticGrouping(self) -> tuple[list]:
-        '''Grouping by static
+    def SG(self) -> tuple[np.ndarray,np.ndarray]:
+        '''Grouping by static grouping
         '''
-        pass
+        seps, nonseps = [], []
+        # Generate subdim
+        if (self.fnc.prob_dim % self.cnf.max_div) == 0 :
+            subdims = [self.fnc.prob_dim//self.cnf.max_div] * self.cnf.max_div
+        else :
+            subdims = [self.fnc.prob_dim//self.cnf.max_div] * (self.cnf.max_div - 1)
+            subdims.append( self.fnc.prob_dim - sum(subdims) )
+        # Divide group
+        dims = np.arange(self.fnc.prob_dim)
+        total_subdim = 0
+        for subdim in subdims:
+            nonseps.append(dims[total_subdim:total_subdim+subdim])
+            total_subdim += subdim
+        return seps, nonseps
 
-    def RandomGrouping(self) -> tuple[list]:
-        '''Grouping by random
+    def RG(self) -> tuple[np.ndarray,np.ndarray]:
+        '''Grouping by random grouping with A fixed subcomponent size
         '''
-        pass
+        # set random variable
+        if self.cnf.deterministic_grouping:
+            self.rd = np.random
+            self.rd.seed(0)
+        else:
+            self.rd = self.cnf.rd
+        seps, nonseps = [], []
+        # Generate subdim
+        if (self.fnc.prob_dim % self.cnf.max_div) == 0 :
+            subdims = [self.fnc.prob_dim//self.cnf.max_div] * self.cnf.max_div
+        else :
+            subdims = [self.fnc.prob_dim//self.cnf.max_div] * (self.cnf.max_div - 1)
+            subdims.append( self.fnc.prob_dim - sum(subdims) )
+        # Divide group
+        dims = np.arange(self.fnc.prob_dim)
+        self.rd.shuffle(dims)
+        total_subdim = 0
+        for subdim in subdims:
+            nonseps.append(dims[total_subdim:total_subdim+subdim])
+            total_subdim += subdim
+        # reset random variable
+        del self.rd
+        if not self.cnf.deterministic_grouping:
+            self.cnf.setRandomSeed(self.cnf.seed)
+        return seps, nonseps
 
-    def RDG3(self) -> tuple[list,list] :
+    def RDG3(self) -> tuple[np.ndarray,np.ndarray] :
         '''Grouping by RDG3 for overlapping problems
+
+        Note:
+            ep_n : threshold min element size
+                - 50 (recommend):
+                    robust parameter setting
+                - 1000:
+                    RDG3 == RDG2 (~RDG)
+                    * RDG2 is adaptive parameter settings version of RDG.
         '''
+        # set random variable
+        if self.cnf.deterministic_grouping:
+            self.rd = np.random
+            self.rd.seed(0)
+        else:
+            self.rd = self.cnf.rd
+
         dim, axis_range = self.fnc.prob_dim, self.fnc.axis_range.copy()
         lb, ub = axis_range[:,0], axis_range[:,1]
-        ep_n, ep_s = self.cnf.ep_n, self.cnf.ep_s
+        ep_n = 1000 if self.cnf.group_name == 'RDG2' else self.cnf.ep_n
+        ep_s = self.cnf.ep_s
 
         seps, nonseps, S = [], [], set()
         x_ll = lb.copy()
@@ -223,7 +276,7 @@ class OptimizerCore:
 
         while len(x_remain) > 0:
             x_remain = set()
-            _X1, x_remain = self.getInteraction(self.cnf, X1, X2, x_remain, x_ll, y_ll, dim, lb, ub)
+            _X1, x_remain = self.__getInteraction(X1, X2, x_remain, x_ll, y_ll, dim, lb, ub)
             if len(_X1) < ep_n and len(_X1) != len(X1):
                 X1 = _X1.copy()
                 X2 = x_remain.copy()
@@ -253,9 +306,14 @@ class OptimizerCore:
                 seps.append(_S)
                 for _s in _S:
                     S.remove(_s)
+
+        # reset random variable
+        del self.rd
+        if not self.cnf.deterministic_grouping:
+            self.cnf.setRandomSeed(self.cnf.seed)
         return seps, nonseps
 
-    def getInteraction(self,
+    def __getInteraction(self,
         X1:set, X2:set, x_remain:set,
         x_ll:np.ndarray, y_ll:np.ndarray,
         dim:int,
@@ -276,7 +334,8 @@ class OptimizerCore:
         Returns:
             tuple[set,set]: [description]
         '''
-        mdc = self.cnf.mdc
+        # machine dependence constant 2^(-52) in Python
+        mdc = 2**(-52)
         # cast X1, X2 to ndarray
         _X1, _X2 = np.array(list(X1)), np.array(list(X2))
 
@@ -292,7 +351,7 @@ class OptimizerCore:
         # calculate fitness change delta1, delta2
         delta1, delta2 = (y_ll - y_ul), (y_lm - y_um)
 
-        # estimate ep
+        # estimate ep based on RDG2 (adaptive parameter)
         gamma = lambda k: k*mdc / (1.-k*mdc)
         ep = gamma(mt.sqrt(dim)+2.) * (abs(y_ll) + abs(y_ul) + abs(y_lm) + abs(y_um))
 
@@ -300,12 +359,12 @@ class OptimizerCore:
             if len(X2) == 1:
                 X1 = X1 | X2
             else:
-                # random elements
-                # _cnf.rd.shuffle(_X2)
+                # random element
+                self.rd.shuffle(_X2)
                 mid = mt.floor(len(X2)/2)
                 G1, G2 = set(_X2[:mid]), set(_X2[mid:])
-                X1_1, x_remain = self.getInteraction(X1, G1, x_remain, x_ll, y_ll, dim, lb, ub)
-                X1_2, x_remain = self.getInteraction(X1, G2, x_remain, x_ll, y_ll, dim, lb, ub)
+                X1_1, x_remain = self.__getInteraction(X1, G1, x_remain, x_ll, y_ll, dim, lb, ub)
+                X1_2, x_remain = self.__getInteraction(X1, G2, x_remain, x_ll, y_ll, dim, lb, ub)
                 X1 = X1_1 | X1_2
         else:
             x_remain = x_remain | X2

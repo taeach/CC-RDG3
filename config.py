@@ -1,5 +1,5 @@
 # Configuration
-# version 1.0 (2021/12/24)
+# version 1.1 (2022/01/12)
 
 import  os
 import  sys
@@ -18,7 +18,7 @@ class Configuration:
         self.time = tm.strftime('%Y-%m-%d_%H-%M-%S')
 
         # Parallel Process
-        self.n_jobs             = -1                     # the number of CPU cores using for parallel processing
+        self.n_jobs                 = -1                     # the number of CPU cores using for parallel processing
         '''
         1       : sequential execution          (cpu usage rate: ■□□□□□□□□□, ■=1)
         2       : 2 CPUs are used.              (cpu usage rate: ■■□□□□□□□□, ■=2)
@@ -29,7 +29,7 @@ class Configuration:
         '''
 
         # Development Version
-        self.version            = '3.5'
+        self.version                = '3.5'
 
         # Problem (Function)
         prob_sets      = {
@@ -44,37 +44,40 @@ class Configuration:
                 ['LSGO2013_F1', 'LSGO2013_F13', 'LSGO2013_F14', 'LSGO2013_F15']
             ]
         }
-        self.prob_dim           = 1000
-        self.prob_name          = prob_sets['lsgo2013']
-        self.prob_env_noise     = 'off'                 # LSGO2013 benchmark noise (on/off)
-        self.opt_type           = 'AutoComplete'        # min or max
+        self.prob_dim               = 1000
+        self.prob_name              = prob_sets['lsgo2013']
+        self.prob_env_noise         = 'on'                  # LSGO2013 benchmark noise (on/off)
+        self.opt_type               = 'AutoComplete'        # AutoComplete / min / max
 
         # Environmental setting
-        self.max_trial          = 25                    # max trials (11/25/31)
-        self.max_evals          = 3_000_000             # max FEs (1_000_000/3_000_000/10_000_000)
-        self.initial_seed       = 1                     # initial_seed ~ initial_seed + max_trial - 1
+        self.max_trial              = 25                    # max trials (11/25/31)
+        self.max_evals              = 3_000_000             # max FEs (1_000_000/3_000_000/10_000_000)
+        self.initial_seed           = 2                     # initial_seed ~ initial_seed + max_trial - 1
 
         # Optimizer setting
         ## General
-        self.opt_name           = 'CCEA'                # optimizer name
-        self.subopt_name        = 'PSO'                 # PSO, GA
-        self.max_pop            = 10                    # population size (10)
-        ## GA Parameter
-        self.crossover_rate     = 1.0
-        self.mutation_rate      = 0.01
-        ## PSO Parameter
+        self.opt_name               = 'CCEA'                # optimizer name
+        self.subopt_name            = 'PSO'                 # PSO, GA
+        self.max_pop                = 10                    # population size (10)
+        self.init_method            = 'random'              # random / lhs
         ## CC Parameter
-        self.max_div            = 100                   # division number
-        self.fitness_assignment = 'best'                # best / current (*)
-        self.group_name         = 'RDG3'                # SG / RDG3
-        self.nonseps_div        = False                 # nonseps division
-        self.max_nonseps_dim    = 100                   # max nonseparable dimension
-        self.mdc                = 2**(-52)              # machine dependence constant 2^(-52) in Python
-        self.ep_n               = 50                    # threshold min element size
+        self.fitness_assignment     = 'best'                # best / current (*)
+        self.group_name             = 'RDG3'                # SG / RG / RDG2 /RDG3
+        self.deterministic_grouping = True                  # True / False
+        self.nonseps_div            = False                 # nonseps division
+        self.max_nonseps_dim        = 100                   # max nonseparable dimension
+        ### SG/RG Parameter
+        self.max_div                = 20                    # division number
+        ### RDG2/RDG3 Parameter
+        self.ep_n                   = 50                    # threshold min element size
         '''
         when ep_n = 1000, RDG3 is equivalent to the RDG or RDG2
         '''
-        self.ep_s               = 100                   # threshold max dimension value to solve separable sets
+        self.ep_s                   = 100                   # threshold max dimension value to solve separable sets
+        ## GA Parameter
+        self.crossover_rate         = 1.0
+        self.mutation_rate          = 0.01
+        ## PSO Parameter
 
         # I/O setting
         ## folder/file name assignment
@@ -82,8 +85,8 @@ class Configuration:
         self.dirname    = {
             # [1] root folder
             'env'           : '_env',
-            'result'        : '_result',
             'group'         : '_group',
+            'result'        : '_result',
             # [2] _env folder
             'cec2013lsgo'   : 'cec2013lsgo',
             # [3] _result/prob_name folder
@@ -103,15 +106,17 @@ class Configuration:
         self.filename   = {
             # _env
             'module': 'module.txt',
+            # _group
+            'group': lambda n: f'group_{n}.csv',
             # _result
+            'setting': 'config.yml',
             'result': lambda n: f'trial{n}_std.xlsx',
             'regular-log': lambda n,FEs: f'trial{n}_std_agg{FEs}.xlsx',
             'result-last': lambda n: f'trial{n}_std_last.xlsx',
             'regular-result': lambda n,FEs: f'trial{n}_std_best_agg{FEs}.xlsx',
             'result-all': lambda p,i: f'all_trials_{i}_{p}.xlsx',
             'result-stat': lambda p,i: f'stat-{i}_{p}.xlsx',
-            'result-stat-image': lambda p,i: f'stat-{i}_{p}.png',
-            'setting': 'config.yml'
+            'result-stat-image': lambda p,i: f'stat-{i}_{p}.png'
         }
 
         ## path
@@ -151,10 +156,6 @@ class Configuration:
             first-only    : output only first trial
             all           : output all trials
         '''
-
-        ## Animation
-        self.anime_out      = False                             # output animation
-        self.anime_interval = 5                                 # interval of animation output
 
     def setRandomSeed(self, seed=1):
         '''Set seed value
