@@ -1,5 +1,5 @@
 # Function
-# version 1.1 (2022/01/07)
+# version 1.2 (2022/01/07)
 
 import os
 import math  as mt
@@ -42,8 +42,7 @@ class Function:
 
         self.setFunction()
         self.extendDomain()
-        print(isinstance(self,str))
-        log(self.__class__.__name__, f'\t\t[ Problem : {prob_name} ]\t\t')
+        log(self, f'\t\t[ Problem : {prob_name} ]\t\t')
 
 
     def setFunction(self) -> None:
@@ -83,7 +82,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F1
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F2':
@@ -92,7 +91,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F2
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-5, 5]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F3':
@@ -101,7 +100,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F3
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-32, 32]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F4':
@@ -110,7 +109,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F4
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100, 100]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F5':
@@ -119,7 +118,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F5
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-5,5]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F6':
@@ -128,7 +127,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F6
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-32,32]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F7':
@@ -137,7 +136,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F7
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F8':
@@ -146,7 +145,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F8
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F9':
@@ -155,7 +154,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F9
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-5,5]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F10':
@@ -164,7 +163,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F10
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-32,32]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F11':
@@ -173,7 +172,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F11
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F12':
@@ -182,7 +181,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F12
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         elif self.prob_name == 'LSGO2013_F13':
@@ -191,7 +190,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F13
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             # 905D because of overlapping
             self.prob_dim = 905
@@ -201,7 +200,7 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F14
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             # 905D because of overlapping
             self.prob_dim = 905
@@ -211,11 +210,11 @@ class Function:
             elif self.cnf.prob_env_noise == 'off' :
                 self.evaluate = self.LSGO2013_F15
             else :
-                log(self.__class__.__name__, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
+                log(self, f'Error: Do not exist prob_env_noise "{self.cnf.prob_env_noise}"')
             self.axis_range  = [-100,100]
             self.prob_dim = 1000
         else:
-            log(self.__class__.__name__, f'Error: Do not exist prob_name "{self.prob_name}"')
+            log(self, f'Error: Do not exist prob_name "{self.prob_name}"')
             return None
 
     def doEvaluate(self, x:np.ndarray):
