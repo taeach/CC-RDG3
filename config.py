@@ -1,5 +1,5 @@
 # Configuration
-# version 1.1 (2022/01/12)
+# version 1.2 (2022/01/12)
 
 import  os
 import  sys
@@ -78,6 +78,9 @@ class Configuration:
         self.crossover_rate         = 1.0
         self.mutation_rate          = 0.01
         ## PSO Parameter
+        self.inertia                = 0.8
+        self.accel_g                = 1.0
+        self.accel_p                = 0.8
 
         # I/O setting
         ## folder/file name assignment
@@ -97,25 +100,25 @@ class Configuration:
         self.comment    = f'{self.opt_name}-{self.subopt_name}_v{self.version}_{self.shortenEvals()}-evals_{self.time}'
         # self.comment    = f'debug-mode_{self.time}'
         self.expname    = {
-            'input' : f'input_ver{self.version}_{self.comment}',
-            'job'   : f'job_ver{self.version}_{self.comment}',
-            'output': f'output_ver{self.version}_{self.comment}',
-            'result': f'result_ver{self.version}_{self.comment}'
+            'result': f'result_{self.comment}'
         }
         ### experiment file
         self.filename   = {
             # _env
-            'module': 'module.txt',
+            'module'        : 'module.txt',
             # _group
-            'group': lambda n: f'group_{n}.csv',
+            'group'         : lambda n: f'group_{n}.csv',
+            'group-log'     : lambda n: f'log_{n}.csv',
             # _result
-            'setting': 'config.yml',
-            'result': lambda n: f'trial{n}_std.xlsx',
-            'regular-log': lambda n,FEs: f'trial{n}_std_agg{FEs}.xlsx',
-            'result-last': lambda n: f'trial{n}_std_last.xlsx',
-            'regular-result': lambda n,FEs: f'trial{n}_std_best_agg{FEs}.xlsx',
-            'result-all': lambda p,i: f'all_trials_{i}_{p}.xlsx',
-            'result-stat': lambda p,i: f'stat-{i}_{p}.xlsx',
+            'setting'       : 'config.yml',
+            # DataLogger
+            'regular-log'   : lambda n,c: f'trial{n}_std{c}.xlsx',
+            'result'        : lambda n: f'trial{n}_std.xlsx',
+            'result-pop'    : lambda n: f'trial{n}_pop.xlsx',
+            'profile-report': lambda n: f'profile-report_trial{n}.html',
+            # DataProcessing
+            'result-all'    : lambda p,i: f'all_trials_{i}_{p}.xlsx',
+            'result-stat'   : lambda p,i: f'stat-{i}_{p}.xlsx',
             'result-stat-image': lambda p,i: f'stat-{i}_{p}.png'
         }
 
@@ -147,8 +150,9 @@ class Configuration:
             'population'    : {
                 'out'       :   False,
                 'n_sample'  :   400,
+                'report'    :   False,          # profile report
                 'trial'     :   'all'           # first-only or all
-            }
+            },
         }
         ## Data processing
         self.dlog_trials    = 'all'                             # output trial for detail log
