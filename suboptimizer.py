@@ -45,6 +45,14 @@ class Population:
         '''
         return self.x_new, self.f_new
 
+    @property
+    def getPopulation(self) -> tuple:
+        '''Population getter method (external reference)
+        Returns:
+            tuple: x and f
+        '''
+        return self.x, self.f
+
 
 class OptimizerCore:
     '''Core optimizer method
