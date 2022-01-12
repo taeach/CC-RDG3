@@ -1,5 +1,5 @@
 # Optimizer
-# version 1.2 (2022/01/12)
+# version 1.3 (2022/01/12)
 
 import os
 import sys
@@ -79,7 +79,7 @@ class CCEA(PSO):
         self.init_evals = self.fnc.total_evals
         # update x_best, f_best
         self.pop = self.updateBest(self.pop, self.pop.x_new, self.pop.f_new)
-        # record initial evaluations
+        # update indices
         self.updateIndices('pop')
         self.resetIndicesBy1cycle('pop')
 
@@ -129,9 +129,9 @@ class CCEA(PSO):
             nonseps_with_nan = np.array(df[df.index.str.startswith('nonsep')].values)
             seps, nonseps = [], []
             for _sep in seps_with_nan:
-                seps.append(np.array(_sep[~pd.isnull(_sep)]))
+                seps.append(np.array(_sep[~pd.isnull(_sep)], dtype=int))
             for _nonsep in nonseps_with_nan:
-                nonseps.append(np.array(_nonsep[~pd.isnull(_nonsep)]))
+                nonseps.append(np.array(_nonsep[~pd.isnull(_nonsep)], dtype=int))
             self.fnc.total_evals += group_evals
             self.dlg.addExeTime(group_times)
         # Not exist group file -> Calculate and output

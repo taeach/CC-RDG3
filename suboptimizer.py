@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.3 (2022/01/12)
+# version 1.4 (2022/01/12)
 
 # standard library
 import sys
@@ -475,7 +475,7 @@ class OptimizerCore:
 
 class PSO(OptimizerCore):
     '''PSO (Particle Swarm Optimization)
-    
+
     Note:
         - global best : use pop.x_best
 
@@ -492,13 +492,18 @@ class PSO(OptimizerCore):
             fnc (Function): Function class
         '''
         super().__init__(cnf, fnc)
-        self.params  = {}
+        self.params:dict  = {}
 
     def initializeParameter(self) -> None:
         '''initialize parameter
         '''
-        self.params['crossover_rate'] = self.cnf.crossover_rate
-        self.params['mutation_rate'] = self.cnf.mutation_rate
+        init_velocity:float = 0.
+        self.params['velocity'] = [ np.full((self.cnf.max_pop, subdim), init_velocity) for subdim in self.dim ]
+        self.params['x_pbest'] = [ np.full((self.cnf.max_pop, subdim), np.nan) for subdim in self.dim ]
+        self.params['f_pbest'] = [ np.full(self.cnf.max_pop, self.init_fitness) for subdim in self.dim ]
+        self.params['inertia'] = self.cnf.inertia
+        self.params['accel_g'] = self.cnf.accel_g
+        self.params['accel_p'] = self.cnf.accel_p
 
 
     def initializePopulation(self, pop:Population) -> Population:
@@ -514,10 +519,56 @@ class PSO(OptimizerCore):
 
 
     def updatePopulation(self, pop:Population) -> Population:
-        '''update position
+        '''update population
         '''
         _div, _pop = self.getIndices
-
+        self.params['velocity'][_div][_pop] = self.__updateVelocity(pop)
+        pop.x[_div][_pop] = self.__updatePosition(pop)
+        pop.x_new = self.setCV(pop)
+        pop.f_new = self.getFitness(pop.x_new)
+        pop = self.updateBest(pop, pop.x_new, pop.f_new)
+        self.updateIndices('pop')
         return pop
+
+
+    def updateBest(self, pop:Population, x_new:np.ndarray, f_new:float) -> Population:
+        '''Update global and personal best position and fitness value
+        '''
+        _div, _pop = self.getIndices
+        subgroup = self.group[_div]
+        # global best
+        if self.superior(f_new, pop.f_best):
+            pop.x_best = x_new.copy()
+            pop.f_best = f_new
+        # personal best
+        if self.superior(f_new, self.params['f_pbest'][_div][_pop]):
+            self.params['x_pbest'][_div][_pop] = x_new[subgroup]
+            self.params['f_pbest'][_div][_pop] = f_new
+        return pop
+
+
+    def __updateVelocity(self, pop:Population) -> np.ndarray:
+        '''Update velocity
+        '''
+        _div, _pop = self.getIndices
+        subgroup, subdim = self.group[_div], self.dim[_div]
+        # update velocity
+        v = self.params['inertia']*self.params['velocity'][_div][_pop]
+        + self.params['accel_g']*self.cnf.rd.rand(subdim)*(pop.x_best[subgroup]-pop.x[_div][_pop])
+        + self.params['accel_p']*self.cnf.rd.rand(subdim)*(self.params['x_pbest'][_div][_pop]-pop.x[_div][_pop])
+        return v
+
+
+    def __updatePosition(self, pop:Population) -> np.ndarray:
+        '''Update position by velocity
+        '''
+        _div, _pop = self.getIndices
+        subgroup, subdim = self.group[_div], self.dim[_div]
+        lb, ub = self.fnc.axis_range[subgroup,0], self.fnc.axis_range[subgroup,1]
+        # update position
+        x = pop.x[_div][_pop] + self.params['velocity'][_div][_pop]
+        # boundary treatment
+        x = np.clip( x, lb, ub )
+        return x
 
 
