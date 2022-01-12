@@ -1,5 +1,5 @@
 # Optimizer
-# version 1.1 (2022/01/12)
+# version 1.2 (2022/01/12)
 
 import os
 import sys
@@ -41,6 +41,7 @@ class CCEA(PSO):
         '''initialize method (external reference)
            (one-call -> one-evaluation)
         '''
+        _div, _pop = self.getIndices
         _pop = self.indices['pop']
         if _pop == 0:
             # set opt type
@@ -66,29 +67,22 @@ class CCEA(PSO):
             else:
                 self.group.extend(nonseps)
             self.max_div = len(self.group)
-            self.subdim = [ len(group) for group in self.group ]
+            self.dim = [ len(group) for group in self.group ]
             # initialize models
             self.initializeParameter()
             # initialize population
             self.pop = self.initializePopulation(self.pop)
 
         # evaluate x
-        if isinstance(f_new:=self.getFitness(self.pop.x[_pop]),float):
-            self.pop.f_new = f_new
-            self.pop.f[_pop] = f_new
-        else:
-            log(self, f'Error: {f_new}', output=sys.stderr)
-            raise Exception(f'Error: {f_new}')
-        # update x_best, f_best
-        best_index = self.getBestIndices(self.pop.f,1)
-        self.pop = self.updateBest(self.pop, self.pop.x[best_index], self.pop.f[best_index])
-        # record initial evaluations
+        self.pop.x_new = self.setCV(self.pop)
+        self.pop.x_new = self.linkSolution(self.pop)
+        self.pop.f_new = self.getFitness(self.pop.x_new)
         self.init_evals = self.fnc.total_evals
-        # update indices
-        self.updateIndices()
-        # reset indices (when last update)
-        if self.indices['div'] == 1:
-            self.indices['div'], self.indices['pop'] = 0, 0
+        # update x_best, f_best
+        self.pop = self.updateBest(self.pop, self.pop.x_new, self.pop.f_new)
+        # record initial evaluations
+        self.updateIndices('pop')
+        self.resetIndicesBy1cycle('pop')
 
 
     def update(self) -> None:
