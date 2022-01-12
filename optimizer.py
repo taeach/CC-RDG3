@@ -74,7 +74,6 @@ class CCEA(PSO):
             self.pop = self.initializePopulation(self.pop)
 
         # evaluate x
-        self.pop.x_new = self.setCV(self.pop)
         self.pop.x_new = self.linkSolution(self.pop)
         self.pop.f_new = self.getFitness(self.pop.x_new)
         self.init_evals = self.fnc.total_evals

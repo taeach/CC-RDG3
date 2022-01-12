@@ -68,8 +68,10 @@ class OptimizerCore:
         max_prob = []       # maximization problem lists
         if fnc_type in max_prob:
             self.cnf.opt_type = 'max'
+            self.init_fitness = -np.inf
         else:
             self.cnf.opt_type = 'min'
+            self.init_fitness = np.inf
 
 
     def superior(self, value_1:float, value_2:float) -> bool:
@@ -132,10 +134,6 @@ class OptimizerCore:
         Returns:
             Population: population set by initial values
         '''
-        if self.cnf.opt_type == 'min':
-            init_fitness = np.inf
-        elif self.cnf.opt_type == 'max':
-            init_fitness = -np.inf
         # set variables
         pop_size, dim, axis_range = self.cnf.max_pop, self.fnc.prob_dim, self.fnc.axis_range.copy()
         lb, ub = axis_range[:,0], axis_range[:,1]
@@ -153,13 +151,12 @@ class OptimizerCore:
                     ]
             case _:
                 log(self,f'Error: Invalid init_method "{self.cnf.init_method}"')
-        pop.f = np.full((pop_size, self.max_div), init_fitness)
+        pop.f = np.full((pop_size, self.max_div), self.init_fitness)
         pop.x_best = np.full(dim,np.nan)
-        pop.f_best = init_fitness
+        pop.f_best = self.init_fitness
         return pop
 
-
-    def updateBest(self, pop:Population, x_new:list|np.ndarray, f_new:float) -> Population:
+    def updateBest(self, pop:Population, x_new:np.ndarray, f_new:float) -> Population:
         '''Update best position and fitness value
         '''
         if self.superior(f_new, pop.f_best):
@@ -167,17 +164,6 @@ class OptimizerCore:
             pop.f_best = f_new
         return pop
 
-    def getBestIndices(self, fs:list|np.ndarray, n_output:int=1) -> float|np.ndarray:
-        '''Get best index(or indices) of the fitness values
-        '''
-        assert isinstance(n_output,int) and 1<=n_output<=len(fs), f'Error: n_output {n_output} is invalid value'
-        if self.cnf.opt_type == 'min':
-            return np.argsort(fs)[0] if n_output==1 else np.argsort(fs)[:n_output][::-1]
-        elif self.cnf.opt_type == 'max':
-            return np.argsort(fs)[-1] if n_output==1 else np.argsort(fs)[-n_output:][::-1]
-        else:
-            log(self, f'Error: Invalid opt_type "{self.cnf.opt_type}".', output=sys.stderr)
-            sys.exit(1)
 
     '''
         Cooperative Co-evolution
@@ -284,7 +270,17 @@ class OptimizerCore:
         return pop
 
     def SG(self) -> tuple[np.ndarray,np.ndarray]:
-        '''Grouping by static grouping
+        '''Grouping by static grouping of m s-D subcomponents
+
+        Note:
+            m s-D static decomposition
+                - m x s = [s,s,s,s,s,...,s]  <-- m subcomponents
+            EX:
+                1000D -> 20 50-D static decomposition
+                1000D = [50D,50D,50D,...,50D]  <-- 20 subcomponents
+                      = [[0,1,2,....,49],[50,51,...,99],....,[...,999]]
+            Algorithm:
+                CCPSO-S, CCPSO-Sk, etc.
         '''
         seps, nonseps = [], []
         # Generate subdim
@@ -303,6 +299,17 @@ class OptimizerCore:
 
     def RG(self) -> tuple[np.ndarray,np.ndarray]:
         '''Grouping by random grouping with A fixed subcomponent size
+
+        Note:
+            Random Grouping with a fixed subcomponent size
+                - m x s = [s,s,s,s,s,...,s]  <-- m subcomponents
+                - s is randomly selected by all dimension index.
+            EX:
+                1000D -> 20 50-D static decomposition (randomly selected)
+                1000D = [50D,50D,50D,...,50D]  <-- 20 subcomponents
+                      = [[804,298,85,....,3],[629,413,...,912],....,[...,580]]
+            Algorithm:
+                DECC-I, DECC-G, CCPSO, etc.
         '''
         # set random variable
         if self.cnf.deterministic_grouping:
@@ -334,6 +341,12 @@ class OptimizerCore:
         '''Grouping by RDG3 for overlapping problems
 
         Note:
+            Recurse Differential Grouping 3
+                - decomposition depending on variable interaction
+            Algorithm:
+                CC-RDG3, etc.
+
+        Params:
             ep_n : threshold min element size
                 - 50 (recommend):
                     robust parameter setting
