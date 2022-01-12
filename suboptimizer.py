@@ -1,13 +1,13 @@
 # Sub Optimizer
-# version 1.1 (2022/01/12)
+# version 1.3 (2022/01/12)
 
 # standard library
 import sys
-import copy             as cp
 import math             as mt
 # additional library
 import numpy            as np
-from utils              import log,Stdio
+import pandas           as pd
+from utils              import log
 ''' For Annotations '''
 from config     import Configuration
 from function   import Function
@@ -56,7 +56,7 @@ class OptimizerCore:
         self.indices = { 'div': 0, 'pop': 0 }
         # group
         self.group = []
-        self.subdim = []
+        self.dim = []
 
 
     '''
@@ -124,6 +124,14 @@ class OptimizerCore:
 
 
     def initializePopulation(self, pop:Population) -> Population:
+        '''Initialize all population (Normal)
+
+        Args:
+            pop (Population): population you want to initialize
+
+        Returns:
+            Population: population set by initial values
+        '''
         if self.cnf.opt_type == 'min':
             init_fitness = np.inf
         elif self.cnf.opt_type == 'max':
@@ -133,16 +141,26 @@ class OptimizerCore:
         lb, ub = axis_range[:,0], axis_range[:,1]
         # initialize population
         assert dim == axis_range.shape[0], 'Error: Dimension does not match.'
-        pop.x = self.cnf.rd.uniform(lb, ub, (pop_size, dim))
-        pop.f = np.full((pop_size, self.div), init_fitness)
+        assert len(self.dim) == self.max_div, f'Error: Internal variable len(subdim) "{len(self.dim)}" != max_div "{self.max_div}".'
+        match self.cnf.init_method:
+            case 'random':
+                pop.x = [self.cnf.rd.uniform(lb[subgroup], ub[subgroup], (pop_size, subdim)) for subgroup,subdim in zip(self.group,self.dim)]
+            case 'lhs':
+                from pyDOE import lhs
+                pop.x = [
+                    lb[subgroup] + (ub[subgroup] - lb[subgroup]) * lhs(subdim,pop_size,'c')
+                    for subgroup,subdim in zip(self.group,self.dim)
+                    ]
+            case _:
+                log(self,f'Error: Invalid init_method "{self.cnf.init_method}"')
+        pop.f = np.full((pop_size, self.max_div), init_fitness)
         pop.x_best = np.full(dim,np.nan)
         pop.f_best = init_fitness
         return pop
 
 
     def updateBest(self, pop:Population, x_new:list|np.ndarray, f_new:float) -> Population:
-        '''
-            update best 3 position and fitness
+        '''Update best position and fitness value
         '''
         if self.superior(f_new, pop.f_best):
             pop.x_best = x_new.copy()
@@ -164,36 +182,106 @@ class OptimizerCore:
     '''
         Cooperative Co-evolution
     '''
-    def updateIndices(self) -> None:
-        '''update indices of individual
-        '''
-        self.indices['pop'] += 1
-        if self.indices['pop'] >= self.cnf.max_pop:
-            self.indices['div'] = (self.indices['div'] + 1) % self.max_div
-            self.indices['pop'] = 0
+    @property
+    def getIndices(self) -> tuple[int,int]:
+        '''Get indices of div and pop (external reference)
 
-    def assignFitness(self, pop: Population) -> Population:
-        '''fitness assignment
+        Returns:
+            tuple: div, pop
         '''
-        _pop = self.indices['pop']
+        return self.indices['div'], self.indices['pop']
+
+    def updateIndices(self, priority:str='pop') -> None:
+        '''Update indices
+        (automatically reset pop and div after "pop x div" evaluations )
+
+        Args:
+            priority (str, optional): priority of loop. Defaults to 'pop'.
+            - pop:
+                div=0, pop=0 -> div=0, pop=1 -> div=0, pop=2 -> div=0, pop=3 ->...
+            - div:
+                div=0, pop=0 -> div=1, pop=0 -> div=2, pop=0 -> div=3, pop=0 ->...
+        '''
+        if priority == 'pop':
+            self.indices['pop'] += 1
+            if self.indices['pop'] >= self.cnf.max_pop:
+                self.indices['div'] = (self.indices['div'] + 1) % self.max_div
+                self.indices['pop'] = 0
+        elif priority == 'div':
+            self.indices['div'] += 1
+            if self.indices['div'] >= self.max_div:
+                self.indices['pop'] = (self.indices['pop'] + 1) % self.cnf.max_pop
+                self.indices['div'] = 0
+
+    def resetIndicesBy1cycle(self, priority:str='pop') -> bool:
+        '''Reset indices
+
+        Args:
+            priority (str, optional): 1-cycle. Defaults to 'pop'.
+            - pop:
+                1 cycle: div=0, pop=0 ~ div=0, pop=max_pop-1
+            - div:
+                1 cycle: div=0, pop=0 ~ div=max_div-1, pop=0
+        '''
+        if priority == 'pop':
+            if self.indices['div'] == 1:
+                self.indices['div'], self.indices['pop'] = 0, 0
+                return True
+        elif priority == 'div':
+            if self.indices['pop'] == 1:
+                self.indices['div'], self.indices['pop'] = 0, 0
+                return True
+        return False
+
+
+    def setCV(self, pop:Population) -> np.ndarray:
+        '''Set context vector b*
+        b* = ( pop.x[div][pop] | pop.x_best )
+
+        Args:
+            pop (Population): population with x[div][pop]
+
+        Returns:
+            np.ndarray: complete solution (prob_dim)
+        '''
+        _div, _pop = self.getIndices
+        assert len(pop.x[_div][_pop])==self.subdim[_div], f'Error: Sub-dimension does not match. ({self.__class__.__name__}.setCV)'
+        b = pop.x_best.copy()
+        subgroup = self.group[_div]
+        b[subgroup] = pop.x[_div][_pop]
+        return b
+
+    def linkSolution(self, pop:Population) -> np.ndarray:
+        '''Link solutions
+        x = pop.x[:][pop]
+
+        Args:
+            pop (Population): population with x[0][pop] ~ x[max_div][pop]
+
+        Returns:
+            np.ndarray: complete solution (prob_dim)
+        '''
+        _pop = self.getIndices[1]
+        x = np.full(self.fnc.prob_dim,np.nan)
+        for _div,subgroup in enumerate(self.group):
+            x[subgroup] = pop.x[_div][_pop]
+        assert not any(pd.isnull(x))
+        return x
+
+    def assignFitness(self, pop:Population) -> Population:
+        '''Assign fitness
+        '''
+        _div, _pop = self.getIndices
         if self.cnf.fitness_assignment == 'best':
-            if self.superior(pop.f_new, pop.f[_pop]):
-                pop.f[_pop] = pop.f_new
+            if self.superior(pop.f_new, pop.f[_div][_pop]):
+                pop.f[_div][_pop] = pop.f_new
             else:
                 pass
         elif self.cnf.fitness_assignment == 'current':
-            pop.f[_pop] = pop.f_new
+            pop.f[_div][_pop] = pop.f_new
         else:
             log(self, f'Error: Invalid fitness assignment ({self.cnf.fitness_assignment})', output=sys.stderr)
         return pop
-
-    def updateIndices(self) -> None:
-        '''update indices of individual
-        '''
-        self.indices['pop'] += 1
-        if self.indices['pop'] >= self.cnf.max_pop:
-            self.indices['div'] = (self.indices['div'] + 1) % self.max_div
-            self.indices['pop'] = 0
 
     def SG(self) -> tuple[np.ndarray,np.ndarray]:
         '''Grouping by static grouping
@@ -242,7 +330,7 @@ class OptimizerCore:
             self.cnf.setRandomSeed(self.cnf.seed)
         return seps, nonseps
 
-    def RDG3(self) -> tuple[np.ndarray,np.ndarray] :
+    def RDG3(self) -> tuple[np.ndarray,np.ndarray]:
         '''Grouping by RDG3 for overlapping problems
 
         Note:
@@ -374,6 +462,9 @@ class OptimizerCore:
 
 class PSO(OptimizerCore):
     '''PSO (Particle Swarm Optimization)
+    
+    Note:
+        - global best : use pop.x_best
 
     HowToUse:
         - Initialization
@@ -412,90 +503,7 @@ class PSO(OptimizerCore):
     def updatePopulation(self, pop:Population) -> Population:
         '''update position
         '''
-        div = self.indices['div']
-        _pop = self.indices['pop']
-        l = self.indices['div']+1
-
-        if len(self.params['ls_queue'][l]) == 0:
-            # context vector
-            x_new = cp.deepcopy(pop.x_best)
-
-            # [1] elite selection
-            xs = [pop.x[i][div]  for i in range(len(pop.x))]
-            x1, x2 = xs[_pop].copy(), xs[self.getBestIndices(pop.f)].copy()
-            # TODO: ベスト２個体以外が有効利用されない可能性がある
-
-            # [2] crossover
-            if self.cnf.rd.uniform(0,1) < self.params['crossover_rate'] :
-                if self.cnf.abbrev_solution:
-                    # 2-point crossover
-                    point = np.random.choice(len(x1), 2, replace=False)
-                    point.sort()
-                    if self.cnf.rd.uniform(0,1) < 0.5:
-                        x_layer_new = x1[:point[0]]
-                        x_layer_new.extend(x2[point[0]:point[1]+1])
-                        x_layer_new.extend(x1[point[1]+1:])
-                    else:
-                        x_layer_new = x2[:point[0]]
-                        x_layer_new.extend(x1[point[0]:point[1]+1])
-                        x_layer_new.extend(x2[point[1]+1:])
-                else:
-                    # orderd crossover (OX)
-                    # (1) select cross point
-                    point = np.random.choice(len(x1), 2, replace=False)
-                    point.sort()
-                    s1 = x1[point[0]:point[1]+1]
-                    # (2) copy to x_new
-                    x_layer_new = [None]*len(x1)
-                    x_layer_new[point[0]:point[1]+1] = s1
-                    # (3) remove the elements
-                    s2 = x2.copy()
-                    for element in s1:
-                        s2.remove(element)
-                    # (4) copy to x_new
-                    s2_point = 0
-                    for i,x_element in enumerate(x_layer_new):
-                        if x_element is None:
-                            x_layer_new[i] = s2[s2_point]
-                            s2_point+=1
-                    assert s2_point==len(s2), 'Error: fail to update position in crossover.'
-            else:
-                x_layer_new = x1.copy()
-
-            # [3] mutation
-            if self.cnf.rd.uniform(0,1) < self.params['mutation_rate'] :
-                if self.cnf.abbrev_solution:
-                    # all random mutation (replacement)
-                    for _index,x_element in enumerate(self.group[self.indices['div']]):
-                        x_layer_new[_index] = self.cnf.rd.choice(self.cell_size[self.getLayer(x_element)])
-                else:
-                    # reverse mutation (replacement)
-                    x_layer_new = x_layer_new[::-1]
-            assert len(x_layer_new)==len(x1), 'Error: change solution size by inappropriate operation.'
-
-            # create perfect solution
-            if self.cnf.abbrev_solution:
-                for _index in range(len(self.group[div])):
-                    x_new = self.swapCC(x_new, (div,_index), x_layer_new[_index])
-                x_new = self.clip(x_new)
-            else:
-                x_new[div] = x_layer_new.copy()
-
-            # evaluate x
-            returns = self.getFitness(x_new)
-            if returns == 'No Fitness':
-                # no fitness -> pass
-                return pop
-            pop.f_new, pop.f_org_new, pop.NoVW_new, pop.NoVL_new, pop.totalWL_new, pop.calc_time = returns
-            # !!CAUTION!! pop.x[_pop] is NOT best array
-            pop.x[_pop][div] = x_new[div].copy()
-            # assign fitness
-            pop = self.assignFitness(pop)
-            # update best individual
-            pop = self.updateBest(pop, x_new, pop.f_new)
-
-        if self.cnf.ls_name != None:
-            pop = self.updateByLocalSearch(pop)
+        _div, _pop = self.getIndices
 
         return pop
 
