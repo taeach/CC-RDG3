@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.4 (2022/01/13)
+# version 1.5 (2022/01/13)
 
 import os
 import sys
@@ -36,7 +36,7 @@ class DataLogger:
         self.file_encoding      = 'UTF-8'
         ## frequency of the log output
         self.slog_evals  = [ (self.cnf.max_evals * _num)//self.cnf.log['standard']['n_sample']  for _num in range(1, self.cnf.log['standard']['n_sample']+1) ]
-        self.regular_evals  = [ (self.cnf.max_evals * _num)//10  for _num in range(1, 10+1) ]
+        self.regular_evals  = [ (self.cnf.max_evals * _num)//self.cnf.log['standard']['n_div']  for _num in range(1, self.cnf.log['standard']['n_div']+1) ]
         self.dlog_evals  = [ (self.cnf.max_evals * _num)//self.cnf.log['population']['n_sample']  for _num in range(1, self.cnf.log['population']['n_sample']+1) ]
         # stdout digit
         self.trial_digit = len(str(self.cnf.max_trial))
@@ -272,19 +272,20 @@ class DataLogger:
             # Result-pop:
             if self.cnf.log['population']['out']:
                 pop_head = ['FEs', 'div', 'pop', 'Fitness', 'Diversity']
-                x_head = [f'x{i}' for i in range(self.prob_dim)]
+                x_head = [f'x{i}' for i in range(max([ len(pop_dt) for pop_dt in self.pop_db]) - len(pop_head))]
                 pop_head += x_head
                 pop_df = pd.DataFrame(self.pop_db, columns=pop_head)
                 path_pop = os.path.join(self.path_trial, self.cnf.filename['result-pop'](trial))
                 Stdio.writeDatabase(pop_df, path_pop)
+                log(self, f'Output population result ({os.path.basename(path_pop)})')
                 # Profile Report
                 if self.cnf.log['population']['report']:
                     from pandas_profiling import ProfileReport
                     title = f'Analysis Report (trial{trial})'
                     profile = ProfileReport(pop_df, title=title, explorative=True)
-                    path_profile = os.path.join(self.path_trial, self.cnf.filename['profile-report'])
+                    path_profile = os.path.join(self.path_trial, self.cnf.filename['profile-report'](trial))
                     profile.to_file(output_file=path_profile)
-                    log('DataLogger', f'Output profile report ({os.path.basename(path_profile)})')
+                    log(self, f'Output profile report ({os.path.basename(path_profile)})')
         # Reset database
         self.pop_db, self.pop_db = [], []
 
