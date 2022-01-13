@@ -3,19 +3,10 @@
 		{
 			"name": "CC-RDG3",
 			"path": "."
-		},
-		{
-			"name": "CCAII-EE",
-			"path": "../CCAII-EE"
-		},
-		{
-			"name": "AQFPLogic-Optimization",
-			"path": "../AQFPLogic-Optimization/optimizer"
 		}
 	],
 	"settings": {
 		// Python 3.10 or newer
-		"python.pythonPath": "py -3.10",
-		"git.ignoreLimitWarning": true
+		"python.pythonPath": "py -3.10"
 	}
 }

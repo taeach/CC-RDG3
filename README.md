@@ -37,25 +37,30 @@ pip install -r _config/module.txt
     - 最適化の要素
       - 最小化判定、評価、
     - CCの要素
-      - グルーピング(静的,RDG3),評価値配分
+      - グルーピング(静的グルーピング,ランダムグルーピング,RDG3),評価値配分
 
 #### CCの解の参照方法
 - Populationクラスの`pop.x`に「全個体の解」、`pop.f`に「対応する解の評価値」が格納されてます。
-- 部分問題の分割数`div`, 個体数`pop`のとき、`pop × div`の２次元配列の中に、動的なサイズの`subdim[div]`次元の１次元配列が格納されています。
-  - なので、実際は３次元配列（テンソル）です。
-- 例えば、`i`個目の個体の`m`番目に分割した部分個体の`k`次元目（次元数`d[m]`）にアクセスしたいときは、
+- 部分問題の分割数`div`, 個体数`pop`のとき、`div`のリスト（１次元配列）の中に、`pop × subdim`の２次元配列が格納されています。
+  - pythonの構造では、 **`list[ndarray[ndarray]]`の３次元配列** になります。
+
+- 例えば、`pop`個目の個体の`div`番目に分割した部分個体の`subdim`次元目にアクセスしたいときは、
 ```python
-pop.x[n,m]          # d[m]次元の１次元配列
-pop.x[n,m][k]        # スカラ
+pop.x[div][pop, subdim]          # div分割目、pop個体目のsubdim次元の要素
 ```
 と書きます！
 
-- `m`番目の分割の全個体を取りたいときは、
+- `div`番目に分割した`subdim`次元目の全個体の値を取得したいときは、
 ```python
-pop.x[:,m]      # pop × d[m] の２次元配列
+❎ pop.x[div][:][subdim]        # = pop.x[div][subdim]
+❎ pop.x[div,:,subdim]          # 文法的に❎（ndarray[ndarray[ndarray]]ではない）
+⭕ pop.x[div][:,subdim]         # div分割目、全個体のsubdim次元の要素（1次元配列）
 ```
 と書きます。（スライス）
+
 - **注意点**
-  - １世代で消費する評価回数は **`pop × div`回** です！
+  - １世代で消費する評価回数は **`max_pop × max_div`回** です！
+
+
 
 ### 2-2. ログ
