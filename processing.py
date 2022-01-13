@@ -1,11 +1,13 @@
 # Data Processing
-# version 1.1 (2022/01/13)
+# version 1.2 (2022/01/13)
 
 import os
 import sys
 from typing             import Any
 import numpy            as np
 import pandas           as pd
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib         import pyplot as plt
 from sklearn.manifold   import TSNE
 import networkx         as nx
@@ -201,12 +203,12 @@ class DataProcessing:
                 for i in range(self.cnf.initial_seed, max_trial+self.cnf.initial_seed):
                     filename = self.cnf.filename['result-pop'](i)
                     path_div = os.path.join(self.path_dt, filename)
-                    df_div = Stdio.readDatabase(path_div)
-                    if not df_div is None:
+                    df_dvs = Stdio.readDatabase(path_div)
+                    if not df_dvs is None:
                         if i == 1:
-                            df_fitdiv = pd.DataFrame({ filename : np.array(df_div[div_column_name])}, index = df_div.index)
+                            df_fitdiv = pd.DataFrame({ filename : np.array(df_dvs[div_column_name])}, index = df_dvs.index)
                         else:
-                            df_fitdiv[filename] = np.array(df_div[div_column_name])
+                            df_fitdiv[filename] = np.array(df_dvs[div_column_name])
                     else:
                         log(self, f'Error: Cannot read database fitdiv({path_div}).', output=sys.stderr)
                         break
@@ -227,7 +229,7 @@ class DataProcessing:
                         _ave.append(_df.mean())
                         _std.append(np.std(_df))
                     # make dataframe
-                    df_div = pd.DataFrame({
+                    df_dvs = pd.DataFrame({
                         'min' : np.array(_min),
                         'q25' : np.array(_q25),
                         'med' : np.array(_med),
@@ -240,7 +242,7 @@ class DataProcessing:
                     Stdio.drawFigure(
                         x=self.df_std.index,
                         y=self.df_std['med'],
-                        y2=df_div['max'],
+                        y2=df_dvs['max'],
                         title=title,
                         label=ylabel,
                         label2=ylabel2,
@@ -262,77 +264,63 @@ class DataProcessing:
         # Grouping
         if self.cnf.log['grouping']['out']:
             path_out = Stdio.makeDirectory(self.path_out_parent, self.cnf.dirname['grouping'], confirm=False)
-            for opt in self.opts:
-                filename_group = os.path.splitext(os.path.basename(opt.group_path))[0]
+
+            filenames = set([ opt.group_path for opt in self.opts ])
+
+            for filename in filenames:
+                filename_group = os.path.splitext(os.path.basename(filename))[0]
                 path_group = os.path.join(path_out, self.cnf.filename['grouping'](filename_group))
-                df_group = Stdio.readDatabase(opt.group_path)
+                df_group = Stdio.readDatabase(filename)
                 if df_group is None:
-                    log(self, f'Error: Cannot read database mod ({opt.group_path}).', output=sys.stderr)
+                    log(self, f'Error: Cannot read group database ({filename}).', output=sys.stderr)
                     break
-                max_nodes_per_div = len(df_group.columns[df_group.columns.str.contains('org_id')])
+                df_group = df_group.iloc[:,df_group.columns.str.contains('sep')].dropna(how='all')
+                max_nodes_per_div = len(df_group)
                 G = nx.Graph()
                 pos = {}
-                x_scale, y_scale = 4, 1
+                x_scale, y_scale = 2, 1.3
                 color = {
-                    'node'          : (11/255,120/255,190/255), # TF-like-blue
-                    'error_node'    : (255/255,99/255,71/255),  # tomato
-                    'edge'          : (245/255,147/255,34/255)  # TF-like-orange
+                    'seps_node'     : (11/255,120/255,190/255), # TF-like-blue
+                    'nonseps_node'  : (245/255,147/255,34/255), # TF-like-orange
+                    'link'          : (255/255,99/255,71/255),  # tomato
                 }
                 node_size = 150
-                error_nodes = [] # sample
+                edges_weight_off, edges_weight_on = 0, 1
+                nodes_color = {}
+                edges_width = []
 
-                indices = set(df_group.index)
-                # To avoid complicating, last relationship don't plot
-                indices.remove(max(indices))
-
-                for j in indices:
-                    df_div = df_group.loc[j].dropna(axis=1)
-                    # org_id
-                    ds_div_org = df_div.loc[:,df_div.columns.str.contains('org_id')].iloc[0].astype(int)
-                    nodes_per_div_org = len(ds_div_org)
-                    if j==0:
-                        offset = (max_nodes_per_div - nodes_per_div_org)/2
-                        G.add_nodes_from(ds_div_org)
-                        for _j,_org in enumerate(ds_div_org):
-                            pos[_org] = np.array([x_scale*j,offset+y_scale*_j])
-
-                    # pred_id
-                    ds_div_pred = df_div['pred_id']
-                    G.add_nodes_from(ds_div_pred)
-                    nodes_per_div_pred = len(ds_div_pred)
-                    for _j,_pred in enumerate(ds_div_pred):
-                        offset = (max_nodes_per_div - nodes_per_div_pred)/2
-                        pos[_pred] = np.array([x_scale*(j+1),offset+y_scale*_j])
-
-                    # generate edge
-                    # normalize fitness importance
-                    max_index = df_div.loc[:,df_div.columns.str.contains('FI')].max(axis=1)
-                    df_div_fi = df_div.loc[:,df_div.columns.str.contains('FI')].div(max_index, axis='index')
+                for x_pos, group_name in enumerate(df_group.columns):
+                    node_names = df_group.loc[:,group_name].dropna().astype(int).values
+                    nodes_per_div = len(node_names)
+                    offset = (max_nodes_per_div - nodes_per_div)/2
+                    # Generate nodes
+                    G.add_nodes_from(node_names)
+                    group_color = color['nonseps_node'] if 'nonsep' in group_name else color['seps_node']
                     edges_set = []
-                    for _col,_pred in enumerate(ds_div_pred):
-                        for _ind,_org in enumerate(ds_div_org):
-                            edges_set.append((_org, _pred, df_div_fi.iloc[_col,_ind]))
-                    G.add_weighted_edges_from(edges_set,weight='weight')
+                    for move,node_name in enumerate(node_names):
+                        # Generate position
+                        pos[node_name] = np.array([x_scale*x_pos,offset+y_scale*move])
+                        # Set color
+                        nodes_color[node_name] = group_color
+                        # Generate Edge
+                        if node_name != node_names[-1]:
+                            weight = edges_weight_on if 'nonsep' in group_name else edges_weight_off
+                            edges_set.append((node_names[move], node_names[move+1], weight))
+                            edges_width.append(weight)
+                        else:
+                            G.add_weighted_edges_from(edges_set,weight='weight')
 
                 # Plot figure
-                # x_y_length = np.array(list(pos.values())).max(axis=0)
-                # fig_scale = 0.4
-                # figsize = tuple(fig_scale*x_y_length)
-                plt.figure(figsize=(60,30))
-                nodes_color = []
-                for j in G.nodes():
-                    nodes_color.append(color['error_node'] if j in error_nodes else color['node'])
-                nodes = nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=nodes_color, alpha=0.8)
-                edges_weight = np.array(list(nx.get_edge_attributes(G, 'weight').values()))
-                edges_color = []
-                for edge_weight in edges_weight:
-                    edges_color.append((color['edge'][0], color['edge'][1], color['edge'][2], edge_weight))
-                edges = nx.draw_networkx_edges(G, pos, edge_color=edges_color, width=edges_weight)
+                plt.figure(figsize=(64,36))
+                plt.subplots_adjust(left=0, right=1, bottom=0, top=1)
+                nodes = nx.draw_networkx_nodes(G, pos, node_size=node_size, node_color=list(nodes_color.values()), alpha=0.8)
+                edges_color = [(color['link'][0], color['link'][1], color['link'][2], edges_weight_on)] * len(pos)
+                edges = nx.draw_networkx_edges(G, pos, edge_color=edges_color, width=edges_width)
                 labels = nx.draw_networkx_labels(G, pos, font_size=6)
                 fig,ax = plt.gcf(),plt.gca()
                 ax.set_axis_off()
                 fig.savefig(path_group, dpi=100)
-                log(self, f'Output fitness importance network model-{i} ({path_group.split(os.path.sep)[-1]})', output=sys.stderr)
+                log(self, f'Output group file ({path_group.split(os.path.sep)[-1]})')
 
 
     @staticmethod
