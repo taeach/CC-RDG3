@@ -1,5 +1,5 @@
 # Run Optimizer
-# version 1.3 (2022/01/12)
+# version 1.4 (2022/01/12)
 
 import time             as tm
 from typing             import Any
@@ -25,6 +25,8 @@ def runOpt(opt:Any, cnf:Configuration, fnc:Function, dlg:DataLogger, j:int=1) ->
         dlg.startStopwatch()
         opt.initialize()
         dlg.stopStopwatch()
+        if k==0:
+            dlg.loggingSummary(opt, j)
         dlg.logging(opt, fnc.total_evals, j)
     # update optimizer
     while fnc.total_evals < cnf.max_evals :
