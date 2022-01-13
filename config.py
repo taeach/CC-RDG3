@@ -1,5 +1,5 @@
 # Configuration
-# version 1.2 (2022/01/12)
+# version 1.3 (2022/01/13)
 
 import  os
 import  sys
@@ -45,14 +45,16 @@ class Configuration:
             ]
         }
         self.prob_dim               = 1000
-        self.prob_name              = prob_sets['lsgo2013']
+        self.prob_name              = prob_sets['lsgo2013'][:2]
         self.prob_env_noise         = 'on'                  # LSGO2013 benchmark noise (on/off)
         self.opt_type               = 'AutoComplete'        # AutoComplete / min / max
 
         # Environmental setting
         self.max_trial              = 25                    # max trials (11/25/31)
         self.max_evals              = 3_000_000             # max FEs (1_000_000/3_000_000/10_000_000)
-        self.initial_seed           = 2                     # initial_seed ~ initial_seed + max_trial - 1
+        self.max_trial              = 2                    # max trials (11/25/31)
+        self.max_evals              = 10_000             # max FEs (1_000_000/3_000_000/10_000_000)
+        self.initial_seed           = 1                     # initial_seed ~ initial_seed + max_trial - 1
 
         # Optimizer setting
         ## General
@@ -92,7 +94,10 @@ class Configuration:
             'result'        : '_result',
             # [2] _env folder
             'cec2013lsgo'   : 'cec2013lsgo',
-            # [3] _result/prob_name folder
+            # [3] _result/exp_name
+            'standard'      : '_std',
+            'population'    : '_pop',
+            # [4] _result/exp_name/prob_name folder
             'trial'         : lambda n: f'trial-{n}',
             'trials'        : 'trials'
         }
@@ -115,11 +120,14 @@ class Configuration:
             'regular-log'   : lambda n,c: f'trial{n}_std{c}.xlsx',
             'result'        : lambda n: f'trial{n}_std.xlsx',
             'result-pop'    : lambda n: f'trial{n}_pop.xlsx',
-            'profile-report': lambda n: f'profile-report_trial{n}.html',
+            'profile-report': lambda n: f'trial{n}_profile-report.html',
             # DataProcessing
             'result-all'    : lambda p,i: f'all_trials_{i}_{p}.xlsx',
             'result-stat'   : lambda p,i: f'stat-{i}_{p}.xlsx',
-            'result-stat-image': lambda p,i: f'stat-{i}_{p}.png'
+            'result-stat-image': lambda p,i: f'stat-{i}_{p}.png',
+            'grouping'      : lambda g: f'{g}.png',
+            'visual'        : lambda n,v,p,param: f'trial{n}_{v}_{p}_{param}.png',
+            'fit-div'       : lambda p: f'bestfit-divcurve_{p}.png'
         }
 
         ## path
@@ -150,9 +158,14 @@ class Configuration:
             'population'    : {
                 'out'       :   False,
                 'n_sample'  :   400,
-                'report'    :   False,          # profile report
-                'trial'     :   'all'           # first-only or all
+                'trial'     :   'all',          # first-only or all
+                'report'    :   True,           # profile report
+                'visual'    :   True,           # tSNE
+                'diversity' :   True           # curve
             },
+            'grouping'      : {
+                'out'       :   True
+            }
         }
         ## Data processing
         self.dlog_trials    = 'all'                             # output trial for detail log
