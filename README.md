@@ -35,9 +35,12 @@ pip install -r _config/module.txt
 - `OptimizerCore`：共通のコード(フレームワーク)
   - 最適化手法によらない共通要素
     - 最適化の要素
-      - 最小化判定、評価、
+      - 最小化/最大化判定
+      - 評価値
     - CCの要素
-      - グルーピング(静的グルーピング,ランダムグルーピング,RDG3),評価値配分
+      - 変数分割(Static Grouping,Random Grouping,RDG3)
+      - Context Vectorの補完
+      - 評価値配分
 
 #### CCの解の参照方法
 - Populationクラスの`pop.x`に「全個体の解」、`pop.f`に「対応する解の評価値」が格納されてます。
@@ -61,6 +64,45 @@ pop.x[div][pop, subdim]          # div分割目、pop個体目のsubdim次元の
 - **注意点**
   - １世代で消費する評価回数は **`max_pop × max_div`回** です！
 
-
-
 ### 2-2. ログ
+
+### 2-3. データ処理
+
+### 2-4. 実行
+#### Optimizer/Suboptimizerの単体テスト
+- `optimizer.py`をメインにして実行（初期化＆１回更新）
+
+#### 全体の結合テスト
+- `runopt.py`のメイン関数が以下の`runAll()`になっているか確認して、`runopt.py`をメインにして実行
+```python
+from utils import Stdio
+Stdio.moveWorkingDirectory()
+runAll()
+```
+
+#### パフォーマンステスト
+- `runopt.py`のメイン関数が以下の`performanceChecker()`になっているか確認して、`runopt.py`をメインにして実行
+```python
+from utils import Stdio
+Stdio.moveWorkingDirectory()
+runAll()
+```
+
+#### 全体の実験
+- `runopt.py`のメイン関数が以下の`runParallel()`になっているか確認して、`runopt.py`をメインにして実行（並列処理）
+##### 試行回数優先（デフォルト）
+- １つの関数の試行回数を優先した実行キューを作成
+- prob-1,trial-1 -> prob-1,trial-2 -> prob-1,trial-3 ->...
+```python
+from utils import Stdio
+Stdio.moveWorkingDirectory()
+runParallel()
+```
+##### 問題優先
+- 複数の関数を実行することを優先した実行キューを作成
+- prob-1,trial-1 -> prob-2,trial-1 -> prob-3,trial-1 ->...
+```python
+from utils import Stdio
+Stdio.moveWorkingDirectory()
+runParallel('problem')
+```
