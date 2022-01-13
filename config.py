@@ -1,12 +1,13 @@
 # Configuration
-# version 1.3 (2022/01/13)
+# version 1.4 (2022/01/13)
 
 import  os
 import  sys
 import  time    as tm
 import  numpy   as np
 from    utils   import log
-
+import shutil   as st
+from joblib     import Parallel, delayed
 
 class Configuration:
     '''Configuration
@@ -46,14 +47,14 @@ class Configuration:
         }
         self.prob_dim               = 1000
         self.prob_name              = prob_sets['lsgo2013']
-        self.prob_env_noise         = 'on'                  # LSGO2013 benchmark noise (on/off)
+        self.prob_env_noise         = 'off'                 # LSGO2013 benchmark noise (on/off)
         self.opt_type               = 'AutoComplete'        # AutoComplete / min / max
 
         # Environmental setting
-        self.max_trial              = 25                    # max trials (11/25/31)
-        self.max_evals              = 3_000_000             # max FEs (1_000_000/3_000_000/10_000_000)
+        # self.max_trial              = 25                    # max trials (11/25/31)
+        # self.max_evals              = 3_000_000             # max FEs (1_000_000/3_000_000/10_000_000)
         self.max_trial              = 2                     # max trials (11/25/31)
-        self.max_evals              = 10_000               # max FEs (1_000_000/3_000_000/10_000_000)
+        self.max_evals              = 100_000               # max FEs (1_000_000/3_000_000/10_000_000)
         self.initial_seed           = 1                     # initial_seed ~ initial_seed + max_trial - 1
 
         # Optimizer setting
@@ -211,6 +212,31 @@ class Configuration:
         if not comment.startswith('_'):
             comment = f'_{comment}'
         self.comment += comment
+        self.expname    = {
+            'result': f'result_{self.comment}'
+        }
+
+    @staticmethod
+    def _deleteFolder(rem_path:str):
+        try:
+            if os.path.isdir(rem_path):
+                st.rmtree(rem_path)
+                print(f'[Config] Delete folder "{rem_path}".')
+            else:
+                print(f'[Config] Warning: Folder "{rem_path}" not exist.')
+        except Exception as e:
+            print(f'[Config] Error: {e}')
+
+    def deleteFolders(self):
+        # set absolute path
+        root = os.getcwd()
+        log_path = os.path.join(root,self.dirname['log'])
+        # delete folders path
+        rem_paths = [os.path.join(root,self.dirname['result'],self.expname['result'])]
+        # Parallel Process
+        Parallel(n_jobs=self.n_jobs)( [delayed(self._deleteFolder)(rem_path)  for rem_path in rem_paths ] )
+        print('[Config] Delete Process Finished!')
+
 
     @staticmethod
     def setup(filename:str):

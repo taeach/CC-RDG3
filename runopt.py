@@ -211,10 +211,8 @@ def runParallel(order:str='trial'):
     del dlgs,fncs,opts
 
     # termination process
-    for i in range(loop_num):
-        cnfs[i].deleteFolders()
     dlg_settings.outSetting('end')
-    root_cnf.deleteFolders('all')
+    root_cnf.deleteFolders()
     del root_cnf, dlg_settings
     log('Parallel', 'All Process Finished!')
 
@@ -225,7 +223,7 @@ if __name__ == '__main__':
     from utils import Stdio
     Stdio.moveWorkingDirectory()
     # (2) run
-    # runParallel('problem')
-    runAll()
+    runParallel('problem')
+    # runAll()
     # (3) analyze
     # performanceChecker()
