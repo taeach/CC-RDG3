@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.4 (2022/01/12)
+# version 1.5 (2022/01/12)
 
 # standard library
 import sys
@@ -8,7 +8,7 @@ import math             as mt
 import numpy            as np
 import pandas           as pd
 from utils              import log
-''' For Annotations '''
+''' For Function Annotations '''
 from config     import Configuration
 from function   import Function
 
@@ -58,13 +58,17 @@ class OptimizerCore:
     '''Core optimizer method
     '''
     def __init__(self, cnf:Configuration, fnc:Function) -> None:
-        self.cnf    = cnf
-        self.fnc    = fnc
+        self.cnf                = cnf
+        self.fnc                = fnc
         # update index
-        self.indices = { 'div': 0, 'pop': 0 }
+        self.indices            = { 'div': 0, 'pop': 0 }
         # group
-        self.group = []
-        self.dim = []
+        self.group              = []
+        self.dim                = []
+        # grouping name
+        self.static_grouping    = ['SG']
+        self.random_grouping    = ['RG']
+        self.dynamic_grouping   = ['RDG3']
 
 
     '''
@@ -239,7 +243,7 @@ class OptimizerCore:
             np.ndarray: complete solution (prob_dim)
         '''
         _div, _pop = self.getIndices
-        assert len(pop.x[_div][_pop])==self.subdim[_div], f'Error: Sub-dimension does not match. ({self.__class__.__name__}.setCV)'
+        assert len(pop.x[_div][_pop])==self.dim[_div], f'Error: Sub-dimension does not match. ({self.__class__.__name__}.setCV)'
         b = pop.x_best.copy()
         subgroup = self.group[_div]
         b[subgroup] = pop.x[_div][_pop]

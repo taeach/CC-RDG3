@@ -1,5 +1,5 @@
 # Optimizer
-# version 1.3 (2022/01/12)
+# version 1.4 (2022/01/12)
 
 import os
 import sys
@@ -17,6 +17,7 @@ from function           import Function
 from logger             import DataLogger
 
 # class CCEA(eval(Configuration().subopt_name)):
+''' For VSCode Reference'''
 class CCEA(PSO):
     '''CCEA (Cooperative Co-Evolutionary Algorithm)
 
@@ -28,6 +29,9 @@ class CCEA(PSO):
     HowToUse:
     - Initialize(blank_opt)
     - update(blank_opt) (repeat for termination)
+
+    Note:
+        - One call, One evaluation framework
     '''
     def __init__(self, cnf:Configuration, fnc:Function, dlg:DataLogger) -> None:
         super().__init__(cnf, fnc)
@@ -95,48 +99,31 @@ class CCEA(PSO):
 
     def grouping(self, grouping_fnc:Callable) -> tuple[np.ndarray, np.ndarray]:
         '''grouping by any grouping method
+
+        Note:
+            group_path(str): path of grouping file to use
         '''
-        static_grouping     = ['SG']
-        random_grouping     = ['RG']
-        dynamic_grouping    = ['RDG3']
-        assert grouping_fnc.__name__ in static_grouping + random_grouping + dynamic_grouping, f'Error: Please add grouping_name "{grouping_fnc.__name__}" to grouping ({self.__class__.__name__}.grouping)'
-        if grouping_fnc.__name__ in static_grouping:
+        assert grouping_fnc.__name__ in self.static_grouping + self.random_grouping + self.dynamic_grouping, f'Error: Please add grouping_name "{grouping_fnc.__name__}" to grouping ({self.__class__.__name__}.grouping)'
+        if grouping_fnc.__name__ in self.static_grouping:
             group_family = 'SG'
-        elif grouping_fnc.__name__ in random_grouping:
+        elif grouping_fnc.__name__ in self.random_grouping:
             group_family = 'RG'
-        elif grouping_fnc.__name__ in dynamic_grouping:
+        elif grouping_fnc.__name__ in self.dynamic_grouping:
             group_family = 'DG'
         group_pdir = Stdio.makeDirectory(self.cnf.path_out, self.cnf.dirname['group'], confirm=False)
         group_dir = Stdio.makeDirectory(group_pdir, group_family, confirm=False)
         # Generate filename
-        if grouping_fnc.__name__ in static_grouping + random_grouping:
-            group_file = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_dim}D_{self.cnf.max_div}div'))
-        elif grouping_fnc.__name__ in dynamic_grouping:
-            group_file = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_name}'))
-        if not self.cnf.deterministic_grouping and not grouping_fnc.__name__ in static_grouping:
-            path, ext = os.path.splitext(group_file)
-            group_file = f'{path}_seed={self.cnf.seed}{ext}'
+        if grouping_fnc.__name__ in self.static_grouping + self.random_grouping:
+            self.group_path = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_dim}D_{self.cnf.max_div}div'))
+        elif grouping_fnc.__name__ in self.dynamic_grouping:
+            self.group_path = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_name}'))
+        if not self.cnf.deterministic_grouping and not grouping_fnc.__name__ in self.static_grouping:
+            path, ext = os.path.splitext(self.group_path)
+            self.group_path = f'{path}_seed={self.cnf.seed}{ext}'
 
-        # Exist group file -> Import
-        if os.path.isfile(group_file):
-            log(self, f'Import group from {os.path.basename(group_file)} ...')
-            # import seps and nonseps group from file
-            df = Stdio.readDatabase(group_file).T
-            # data organization
-            group_times = int(df.loc['exe_time',0])
-            group_evals = int(df.loc['total_evals',0])
-            seps_with_nan = np.array(df[df.index.str.startswith('sep')].values)
-            nonseps_with_nan = np.array(df[df.index.str.startswith('nonsep')].values)
-            seps, nonseps = [], []
-            for _sep in seps_with_nan:
-                seps.append(np.array(_sep[~pd.isnull(_sep)], dtype=int))
-            for _nonsep in nonseps_with_nan:
-                nonseps.append(np.array(_nonsep[~pd.isnull(_nonsep)], dtype=int))
-            self.fnc.total_evals += group_evals
-            self.dlg.addExeTime(group_times)
-        # Not exist group file -> Calculate and output
-        else:
-            log(self, f'Calculate group by {self.cnf.group_name} ({os.path.basename(group_file)}) ...')
+        # Not exist group file -> Calculate and output group file
+        if not os.path.isfile(self.group_path):
+            log(self, f'Calculate group by {self.cnf.group_name} ({os.path.basename(self.group_path)}) ...')
             # calculate seps and nonseps group
             _df = {}
             evals_s, time_s = self.fnc.total_evals, tm.mktime(tm.localtime())
@@ -153,7 +140,25 @@ class CCEA(PSO):
             # output file
             if not os.path.isdir(group_dir):
                 os.makedirs(group_dir)
-            Stdio.writeDatabase(df, group_file)
+            Stdio.writeDatabase(df, self.group_path)
+        # Exist group file -> Import
+        else:
+            log(self, f'Import group from {os.path.basename(self.group_path)} ...')
+            # import seps and nonseps group from file
+            df = Stdio.readDatabase(self.group_path).T
+            # data organization
+            group_times = int(df.loc['exe_time',0])
+            group_evals = int(df.loc['total_evals',0])
+            seps_with_nan = np.array(df[df.index.str.startswith('sep')].values)
+            nonseps_with_nan = np.array(df[df.index.str.startswith('nonsep')].values)
+            seps, nonseps = [], []
+            for _sep in seps_with_nan:
+                seps.append(np.array(_sep[~pd.isnull(_sep)], dtype=int))
+            for _nonsep in nonseps_with_nan:
+                nonseps.append(np.array(_nonsep[~pd.isnull(_nonsep)], dtype=int))
+            self.fnc.total_evals += group_evals
+            self.dlg.addExeTime(group_times)
+
         return seps, nonseps
 
 
@@ -163,6 +168,7 @@ class CCEA(PSO):
 
 
 if __name__ == '__main__':
+    # test
     from config     import Configuration
     from function   import Function
     from logger     import DataLogger
@@ -183,4 +189,5 @@ if __name__ == '__main__':
     cnf.setRandomSeed(seed)
     # initialize optimizer
     opt.initialize()
+    opt.update()
 
