@@ -2,12 +2,12 @@
 # version 1.2 (2022/01/07)
 
 import os
-import math  as mt
-import numpy as np
-from utils import log
+import math     as mt
+import numpy    as np
+from utils      import log
 
-''' For Annotations '''
-from config import Configuration
+''' For Function Annotations '''
+from config     import Configuration
 
 
 class Function:

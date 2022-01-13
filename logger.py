@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.2 (2022/01/12)
+# version 1.3 (2022/01/13)
 
 import os
 import sys
@@ -13,7 +13,7 @@ import pandas       as pd
 import yaml
 from copy           import deepcopy
 from utils          import Stdio, log
-''' For Annotations '''
+''' For Function Annotations '''
 from config         import Configuration
 
 
@@ -245,13 +245,13 @@ class DataLogger:
         # Standard-output:
         f_best = opt.pop.getBest[1]
         f_new = opt.pop.getCurrent[1]
-        log(
-            '[{}: trial-{}]'.format(self.prob_name.ljust(13),str(trial).ljust(self.trial_digit)),
-            'FEs = {}  |  Fitness = {}  |  BestFitness = {}'.format(
-                str(total_evals).rjust(self.evals_digit),
-                str(f_new)[:self.fitness_digit].ljust(self.fitness_digit),
-                str(f_best)[:self.fitness_digit].ljust(self.fitness_digit)
-            ))
+        ProbName = self.prob_name.ljust(13)
+        Trial = str(trial).ljust(self.trial_digit)
+        FEs = str(total_evals).rjust(self.evals_digit)
+        Fitness = str(f_new)[:self.fitness_digit].ljust(self.fitness_digit)
+        BestFitness = str(f_best)[:self.fitness_digit].ljust(self.fitness_digit)
+        log(f'{ProbName}: trial-{Trial}',
+            f'FEs = {FEs}  |  Fitness = {Fitness}  |  BestFitness = {BestFitness}')
         # Reset database
         self.std_db= []
 
