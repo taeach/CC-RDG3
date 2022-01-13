@@ -1,5 +1,5 @@
 # Run Optimizer
-# version 1.4 (2022/01/12)
+# version 1.5 (2022/01/14)
 
 import time             as tm
 from typing             import Any
@@ -100,16 +100,17 @@ def runAll() -> None:
     optimizer = eval(f'op.{opt_name}')
 
     for i in trange(len(cnf.prob_name), desc='Problem Loop'):
-        dlg = DataLogger(cnf, cnf.prob_name[i])
-        fncs, opts = [], []
+        dlgs, fncs, opts = [], [], []
         for j in trange(cnf.initial_seed, cnf.max_trial+cnf.initial_seed, desc='Trial Loop'):
+            dlg = DataLogger(cnf, cnf.prob_name[i])
             fnc = Function(cnf, cnf.prob_name[i], j)
             opt = optimizer(cnf,fnc,dlg)
             exe_time.append(runOpt(opt, cnf, fnc, dlg, j))
+            dlgs.append(dlg)
             fncs.append(fnc)
             opts.append(opt)
-        DataProcessing(cnf, fncs, dlg, opts).outProcessing()
-        del dlg,fnc
+        DataProcessing(cnf, fncs, dlgs[0], opts).outProcessing()
+        del fncs, dlgs, opts
 
     dlg_settings.total_exe_time = int(np.array(exe_time).sum())
     dlg_settings.average_exe_time = int(np.average(exe_time))
