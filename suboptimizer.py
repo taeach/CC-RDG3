@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.5 (2022/01/12)
+# version 1.6 (2022/01/12)
 
 # standard library
 import sys
@@ -109,7 +109,7 @@ class OptimizerCore:
             sys.exit(1)
 
 
-    def getFitness(self, x:list|tuple|np.ndarray) -> tuple|float :
+    def getFitness(self, x:list|tuple|np.ndarray, logging:bool=False) -> tuple|float :
         '''get single/multi fitness value
 
         Args:
@@ -119,19 +119,30 @@ class OptimizerCore:
                 multi solutions:
                     xs : [x,x,...,x] or (x,x,...,x) or ndarray(x,x,..,x)
                     * x type is ndarray.
+            logging (bool): logging fitness value
 
         Returns:
             float : fitness value of single solution
             tuple : fitness values of multi solution
         '''
         # x is composed of multi decision value
+        if logging and not 'f_log' in vars(self).keys():
+            self.f_log = []
         if (isinstance(x, np.ndarray) and x.ndim ==2 ) or isinstance(x,(list,tuple)):
             if self.fnc.total_evals >= self.cnf.max_evals:
                 return 'Exceed FEs'
-            return tuple(map(self.fnc.doEvaluate,x))
+            if not logging:
+                return tuple(map(self.fnc.doEvaluate,x))
+            else:
+                self.f_log.extend(f:=tuple(map(self.fnc.doEvaluate,x)))
+                return f
         # x is composed of single decision value
         elif isinstance(x, np.ndarray) and x.ndim ==1:
-            return self.fnc.doEvaluate(x)
+            if not logging:
+                return self.fnc.doEvaluate(x)
+            else:
+                self.f_log.append(f:=self.fnc.doEvaluate(x))
+                return f
         else:
             log(self, f'Error: Invalid type argument in getFitness(). {type(x)}', output=sys.stderr)
             return 'Invalid Input'
@@ -380,7 +391,7 @@ class OptimizerCore:
 
         seps, nonseps, S = [], [], set()
         x_ll = lb.copy()
-        y_ll = self.getFitness(x_ll)
+        y_ll = self.getFitness(x_ll, True)
         x_remain = np.arange(dim)
         X1, X2 = set(x_remain[0:1]), set(x_remain[1:])
         x_remain = set(x_remain)
@@ -459,7 +470,7 @@ class OptimizerCore:
         x_lm[_X2],x_um[_X2]  = (lb[_X2] + ub[_X2])/2, (lb[_X2] + ub[_X2])/2
 
         # get fitness value y_ul, y_lm, y_um
-        y_ul, y_lm, y_um = self.getFitness((x_ul, x_lm, x_um))
+        y_ul, y_lm, y_um = self.getFitness((x_ul, x_lm, x_um), True)
 
         # calculate fitness change delta1, delta2
         delta1, delta2 = (y_ll - y_ul), (y_lm - y_um)

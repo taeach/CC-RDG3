@@ -1,5 +1,5 @@
 # Optimizer
-# version 1.4 (2022/01/12)
+# version 1.5 (2022/01/12)
 
 import os
 import sys
@@ -129,12 +129,14 @@ class CCEA(PSO):
             evals_s, time_s = self.fnc.total_evals, tm.mktime(tm.localtime())
             seps, nonseps = grouping_fnc()
             evals_e, time_e = self.fnc.total_evals, tm.mktime(tm.localtime())
+            self.f_log = np.array(self.f_log)
             # data organization
             _df['exe_time'] = pd.DataFrame([time_e - time_s], index=['exe_time'])
             _df['evals'] = pd.DataFrame([evals_e - evals_s], index=['total_evals'])
+            _df['fitness'] = pd.DataFrame([self.f_log], index=['fitness'])
             _df['seps'] = pd.DataFrame(seps, index=[f'sep_{k}' for k in range(len(seps))])
             _df['nonseps'] = pd.DataFrame(nonseps, index=[f'nonsep_{k}' for k in range(len(nonseps))])
-            df = pd.concat([_df['exe_time'], _df['evals'], _df['seps'], _df['nonseps']])
+            df = pd.concat([_df[key] for key in _df.keys()])
             df_column = pd.DataFrame([np.arange(len(df.columns),dtype=int)], index=['#index'], dtype=str)
             df = pd.concat([df_column, df]).T
             # output file
@@ -149,6 +151,7 @@ class CCEA(PSO):
             # data organization
             group_times = int(df.loc['exe_time',0])
             group_evals = int(df.loc['total_evals',0])
+            self.f_log = np.array(df.loc['fitness'].values)
             seps_with_nan = np.array(df[df.index.str.startswith('sep')].values)
             nonseps_with_nan = np.array(df[df.index.str.startswith('nonsep')].values)
             seps, nonseps = [], []
@@ -181,8 +184,8 @@ if __name__ == '__main__':
     cnf = Configuration()
     log_settings = DataLogger(cnf)
 
-    i,j = 3,0
-    seed = 2
+    i,j = 0,0
+    seed = 1
     dlg = DataLogger(cnf, cnf.prob_name[i])
     fnc = Function(cnf, cnf.prob_name[i])
     opt = eval(f'{cnf.opt_name}(cnf, fnc, dlg)')
