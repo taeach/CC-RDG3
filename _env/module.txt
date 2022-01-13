@@ -13,6 +13,9 @@ pyDOE
 # for profile report
 pandas_profiling
 
+# for Line profiler
+line_profiler
+
 # for CEC2010LSGO, CEC2017 #
 # cython
 # git+https://github.com/YNU-NakataLab/BenchmarkFunction.git#egg=cec2010lsgo&subdirectory=CEC2010LSGO
