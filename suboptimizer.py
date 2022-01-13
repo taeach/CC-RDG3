@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.6 (2022/01/12)
+# version 1.7 (2022/01/12)
 
 # standard library
 import sys
@@ -392,6 +392,9 @@ class OptimizerCore:
         seps, nonseps, S = [], [], set()
         x_ll = lb.copy()
         y_ll = self.getFitness(x_ll, True)
+        if y_ll == 'Exceed FEs':
+            log(self,f'Error: Setting FEs ({self.cnf.max_evals}) is too small for {self.fnc.prob_name}.', output=sys.stderr)
+            sys.exit(1)
         x_remain = np.arange(dim)
         X1, X2 = set(x_remain[0:1]), set(x_remain[1:])
         x_remain = set(x_remain)
@@ -470,7 +473,10 @@ class OptimizerCore:
         x_lm[_X2],x_um[_X2]  = (lb[_X2] + ub[_X2])/2, (lb[_X2] + ub[_X2])/2
 
         # get fitness value y_ul, y_lm, y_um
-        y_ul, y_lm, y_um = self.getFitness((x_ul, x_lm, x_um), True)
+        if ( rets:=self.getFitness((x_ul, x_lm, x_um), True) ) == 'Exceed FEs':
+            log(self,f'Error: Setting FEs ({self.cnf.max_evals}) is too small for {self.fnc.prob_name}.', output=sys.stderr)
+            sys.exit(1)
+        y_ul, y_lm, y_um = rets
 
         # calculate fitness change delta1, delta2
         delta1, delta2 = (y_ll - y_ul), (y_lm - y_um)
