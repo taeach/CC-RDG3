@@ -1,5 +1,5 @@
 # Utilities
-# version 1.1 (2022/01/13)
+# version 1.2 (2022/01/13)
 
 import  os
 import  sys
@@ -51,10 +51,10 @@ def log(attrib_name:str|Callable, message:str, output:TextIOWrapper=sys.stdout, 
         attrib_name = attrib_name.__class__.__name__
     if color!='mono':
         if color=='color':
-            COLOR = COLOR_DICT[attrib_name] if attrib_name in COLOR_DICT.keys() else BOLD
+            COLOR = COLOR_DICT[attrib_name] if attrib_name in COLOR_DICT.keys() else BOLD+BLACK
         else:
             COLOR = color
-        print(f'{COLOR}[{attrib_name}]{RESET} {message}', file=output)
+        print(rf'{COLOR}[{attrib_name}]{RESET} {message}', file=output)
     else:
         print(f'[{attrib_name}] {message}', file=output)
 
@@ -138,7 +138,7 @@ class Stdio:
             assert csv_or_xlsx in ['csv','xlsx'], 'Error: Invalid file extension.'
         else:
             # add extension
-            path_write = '{}.{}'.format(path_write,csv_or_xlsx)
+            path_write = f'{path_write}.{csv_or_xlsx}'
         if csv_or_xlsx == 'xlsx':
             df.to_excel(path_write, engine='openpyxl', index=index, header=header)
         elif csv_or_xlsx == 'csv':
