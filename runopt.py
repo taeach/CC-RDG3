@@ -1,5 +1,5 @@
 # Run Optimizer
-# version 1.2 (2022/01/12)
+# version 1.3 (2022/01/12)
 
 import time             as tm
 from typing             import Any
@@ -8,6 +8,7 @@ import numpy            as np
 from joblib             import Parallel, delayed
 from tqdm               import trange
 
+from utils              import log
 from config             import Configuration
 from function           import Function
 from logger             import DataLogger
@@ -22,16 +23,15 @@ def runOpt(opt:Any, cnf:Configuration, fnc:Function, dlg:DataLogger, j:int=1) ->
     # initialize optimizer
     for k in range(cnf.max_pop):
         dlg.startStopwatch()
-        opt.initialize(opt.blankOpt(fnc.total_evals))
+        opt.initialize()
         dlg.stopStopwatch()
         dlg.logging(opt, fnc.total_evals, j)
     # update optimizer
     while fnc.total_evals < cnf.max_evals :
         dlg.startStopwatch()
-        opt.update(opt.blankOpt(fnc.total_evals))
+        opt.update()
         dlg.stopStopwatch()
         dlg.logging(opt, fnc.total_evals,j)
-
     dlg.outLog(opt, fnc.total_evals, j)
     return dlg.exe_time
 
@@ -63,8 +63,7 @@ def performanceChecker() -> None:
             # initialize optimizer
             prf1.add_function(opt.initialize)
             for k in range(cnf.max_pop):
-                prf1.runcall(opt.initialize, opt.blankOpt(fnc.total_evals))
-                # opt.initialize(opt.blankOpt(fnc.total_evals))
+                prf1.runcall(opt.initialize)
                 dlg.logging(opt, fnc.total_evals)
             # log output
             with open(os.path.join(path_analysis, f'{cnf.opt_name}_initialize_ver{cnf.version}_{cnf.prob_name[i]}.log'), 'w') as f:
@@ -72,9 +71,8 @@ def performanceChecker() -> None:
             # update optimizer
             prf2.add_function(opt.update)
             while fnc.total_evals < cnf.max_evals :
-                prf2.runcall(opt.update, opt.blankOpt(fnc.total_evals))
+                prf2.runcall(opt.update)
                 dlg.logging(opt, fnc.total_evals)
-
             dlg.outLog(opt, fnc.total_evals)
             # log output
             with open(os.path.join(path_analysis, f'{cnf.opt_name}_update_ver{cnf.version}_{cnf.prob_name[i]}.log'), 'w') as f:
@@ -101,12 +99,14 @@ def runAll() -> None:
 
     for i in trange(len(cnf.prob_name), desc='Problem Loop'):
         dlg = DataLogger(cnf, cnf.prob_name[i])
+        fncs, opts = [], []
         for j in trange(cnf.initial_seed, cnf.max_trial+cnf.initial_seed, desc='Trial Loop'):
             fnc = Function(cnf, cnf.prob_name[i], j)
             opt = optimizer(cnf,fnc,dlg)
             exe_time.append(runOpt(opt, cnf, fnc, dlg, j))
-            del opt
-        DataProcessing(cnf, fnc, dlg.path_out, dlg.path_trial).outStatistics()
+            fncs.append(fnc)
+            opts.append(opt)
+        DataProcessing(cnf, fncs, dlg, opts).outProcessing()
         del dlg,fnc
 
     dlg_settings.total_exe_time = int(np.array(exe_time).sum())
@@ -136,7 +136,7 @@ def runParallel(order:str='trial'):
     loop_param_key = tuple(loop_params.keys())
     loop_num = len(list(it.product(*loop_params.values())))
 
-    print('[Parallel] Generate all instances')
+    log('Parallel', 'Generate all instances.')
     # generate all instances
     opt_name = root_cnf.opt_name
     optimizer = eval(f'op.{opt_name}')
@@ -173,7 +173,7 @@ def runParallel(order:str='trial'):
                 opts[i][j].append(optimizer(cnfs[i], fncs[i][j][k], dlgs[i][j]))
 
     # generate run queue
-    print('[Parallel] Generate run queue')
+    log('Parallel', f'Generate run queue (order={order}).')
     if order=='trial':
         ''' prob-1,trial-1 -> prob-1,trial-2 -> prob-1,trial-3 ->... '''
         instance_queue   = np.repeat(np.arange(len(root_cnf.prob_name)), root_cnf.max_trial*loop_num)
@@ -186,7 +186,7 @@ def runParallel(order:str='trial'):
         param_queue = np.repeat(np.arange(loop_num), len(root_cnf.prob_name)*root_cnf.max_trial)
 
     # start process
-    print('[Parallel] Main Process Begins!')
+    log('Parallel', 'Main Process Begins!')
     for i in range(loop_num):
         dlgs[i][0].outSetting('start',stdout=False,timer=False)
 
@@ -199,14 +199,13 @@ def runParallel(order:str='trial'):
         dlgs[i][0].total_exe_time = int(_exe_time.sum())
         dlgs[i][0].average_exe_time = int(np.average(_exe_time))
         dlgs[i][0].outSetting('end',stdout=False,timer=False)
-    del opts
-    print('[Parallel] Main Process Finished!')
+    log('Parallel', 'Main Process Finished!')
 
-    # statistics process
+    # data processing process
     for i in range(loop_num):
         for j in range(len(root_cnf.prob_name)):
-            DataProcessing(cnfs[i], fncs[i][j][0], dlgs[i][j].path_out, dlgs[i][j].path_trial).outStatistics()
-    del dlgs,fncs
+            DataProcessing(cnfs[i], fncs[i][j], dlgs[i][j], opts[i][j]).outProcessing()
+    del dlgs,fncs,opts
 
     # termination process
     for i in range(loop_num):
@@ -214,7 +213,7 @@ def runParallel(order:str='trial'):
     dlg_settings.outSetting('end')
     root_cnf.deleteFolders('all')
     del root_cnf, dlg_settings
-    print('[Parallel] All Process Finished!')
+    log('Parallel', 'All Process Finished!')
 
 
 ''' main '''
@@ -223,7 +222,7 @@ if __name__ == '__main__':
     from utils import Stdio
     Stdio.moveWorkingDirectory()
     # (2) run
-    runParallel('problem')
-    # runAll()
+    # runParallel('problem')
+    runAll()
     # (3) analyze
     # performanceChecker()
