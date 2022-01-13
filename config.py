@@ -45,15 +45,15 @@ class Configuration:
             ]
         }
         self.prob_dim               = 1000
-        self.prob_name              = prob_sets['lsgo2013'][:2]
+        self.prob_name              = prob_sets['lsgo2013']
         self.prob_env_noise         = 'on'                  # LSGO2013 benchmark noise (on/off)
         self.opt_type               = 'AutoComplete'        # AutoComplete / min / max
 
         # Environmental setting
         self.max_trial              = 25                    # max trials (11/25/31)
         self.max_evals              = 3_000_000             # max FEs (1_000_000/3_000_000/10_000_000)
-        self.max_trial              = 2                    # max trials (11/25/31)
-        self.max_evals              = 10_000             # max FEs (1_000_000/3_000_000/10_000_000)
+        self.max_trial              = 2                     # max trials (11/25/31)
+        self.max_evals              = 10_000               # max FEs (1_000_000/3_000_000/10_000_000)
         self.initial_seed           = 1                     # initial_seed ~ initial_seed + max_trial - 1
 
         # Optimizer setting
@@ -97,6 +97,7 @@ class Configuration:
             # [3] _result/exp_name
             'standard'      : '_std',
             'population'    : '_pop',
+            'grouping'      : '_group',
             # [4] _result/exp_name/prob_name folder
             'trial'         : lambda n: f'trial-{n}',
             'trials'        : 'trials'
@@ -113,11 +114,10 @@ class Configuration:
             'module'        : 'module.txt',
             # _group
             'group'         : lambda n: f'group_{n}.csv',
-            'group-log'     : lambda n: f'log_{n}.csv',
             # _result
             'setting'       : 'config.yml',
             # DataLogger
-            'regular-log'   : lambda n,c: f'trial{n}_std{c}.xlsx',
+            'regular-log'   : lambda n,c: f'trial{n}_std({c}).xlsx',
             'result'        : lambda n: f'trial{n}_std.xlsx',
             'result-pop'    : lambda n: f'trial{n}_pop.xlsx',
             'profile-report': lambda n: f'trial{n}_profile-report.html',
@@ -151,20 +151,22 @@ class Configuration:
         self.log = {
             # standard log
             'standard'      : {
-                'out'       :   True,
-                'n_sample'  :   1000
+                'out'       :   True,       # output mode
+                'n_div'     :   10,         # file division log
+                'n_sample'  :   1000        # sample number
             },
             # population analysis log
             'population'    : {
-                'out'       :   False,
-                'n_sample'  :   400,
-                'trial'     :   'all',          # first-only or all
-                'report'    :   True,           # profile report
-                'visual'    :   True,           # tSNE
-                'diversity' :   True           # curve
+                'out'       :   True,       # output mode
+                'n_sample'  :   400,        # sample number
+                'trial'     :   'first-only',# object of trial ( first-only / all )
+                'report'    :   True,       # output: profile report
+                'visual'    :   True,       # output: tSNE
+                'diversity' :   True        # output: diversity curve
             },
+            # grouping image
             'grouping'      : {
-                'out'       :   True
+                'out'       :   True        # ouput mode
             }
         }
         ## Data processing
