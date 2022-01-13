@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.3 (2022/01/13)
+# version 1.4 (2022/01/13)
 
 import os
 import sys
@@ -38,7 +38,6 @@ class DataLogger:
         self.slog_evals  = [ (self.cnf.max_evals * _num)//self.cnf.log['standard']['n_sample']  for _num in range(1, self.cnf.log['standard']['n_sample']+1) ]
         self.regular_evals  = [ (self.cnf.max_evals * _num)//10  for _num in range(1, 10+1) ]
         self.dlog_evals  = [ (self.cnf.max_evals * _num)//self.cnf.log['population']['n_sample']  for _num in range(1, self.cnf.log['population']['n_sample']+1) ]
-        self.added_evals = []
         # stdout digit
         self.trial_digit = len(str(self.cnf.max_trial))
         self.evals_digit = len(str(self.cnf.max_evals))
@@ -188,8 +187,7 @@ class DataLogger:
             else :
                 raise ValueError(f'Invalid argument timing={timing} in LogData.outSetting()')
 
-    ''' Serial Process ( called and executed by runOpt() ) '''
-
+    ''' Serial Process '''
     def logging(self, opt:Callable, total_evals:int, trial:int) :
         '''Log to database
         '''
@@ -214,9 +212,7 @@ class DataLogger:
             f_best = opt.pop.getBest[1]
             f_new = opt.pop.getCurrent[1]
             dtset = [total_evals, f_new, f_best]
-            if not total_evals in self.added_evals:
-                self.std_db.append(dtset)
-                self.added_evals.append(total_evals)
+            self.std_db.append(dtset)
 
             # Regular-log:
             if total_evals in self.regular_evals:
@@ -229,8 +225,6 @@ class DataLogger:
                 dif_std_df = std_df.query(f'{start_FEs} < FEs <= {end_FEs}')
                 path_log_dif = os.path.join(self.path_trial, self.cnf.filename['regular-log'](trial,count+1))
                 Stdio.writeDatabase(dif_std_df, path_log_dif)
-
-            self.added_evals.append(total_evals)
 
 
     def outLogStandard(self, opt:Callable, total_evals:int, trial:int):
@@ -337,3 +331,49 @@ class DataLogger:
             return
         return judge
 
+    ''' Batch Process '''
+    def loggingSummary(self, opt:Callable, trial:int) :
+        '''Log Summary to database
+        '''
+        if self.prob_dim is None:
+            self.prob_dim = opt.fnc.prob_dim
+        f_best = opt.init_fitness
+        # try:
+        for total_evals,f_new in enumerate(opt.f_log,start=1):
+            if opt.superior(f_new,f_best):
+                f_best = f_new
+            self.loggingSummaryStandard(opt, total_evals, trial, f_new, f_best)
+            self.loggingSummaryAdvanced(opt, total_evals, trial, f_new, f_best)
+        # except AttributeError:
+        #     pass
+
+
+    def loggingSummaryStandard(self, opt:Callable, total_evals:int, trial:int, f_new:float, f_best:float) :
+        '''Get Standard Log Summary
+        '''
+        if self.outJudgement('loggingStandard', trial, total_evals) :
+            # Result:
+            dtset = [total_evals, f_new, f_best]
+            self.std_db.append(dtset)
+            # Regular-log:
+            if total_evals in self.regular_evals:
+                std_head = ['FEs', 'Fitness', 'BestFitness']
+                # slice FEs
+                count = self.regular_evals.index(total_evals)
+                start_FEs = self.regular_evals[count-1] if count!=0 else 0
+                end_FEs = self.regular_evals[count]
+                std_df = pd.DataFrame(self.std_db, columns=std_head)
+                dif_std_df = std_df.query(f'{start_FEs} < FEs <= {end_FEs}')
+                path_log_dif = os.path.join(self.path_trial, self.cnf.filename['regular-log'](trial,count+1))
+                Stdio.writeDatabase(dif_std_df, path_log_dif)
+
+
+    def loggingSummaryAdvanced(self, opt:Callable, total_evals:int, trial:int, f_new:float, f_best:float):
+        '''Get advanced log summary
+        '''
+        if self.cnf.log['population']['out']:
+            if self.outJudgement('loggingAdvanced', trial, total_evals) :
+                # Result-pop:
+                i,j,div_xi = 0,0,0
+                xij = [np.nan]
+                self.pop_db.append([total_evals, i, j, f_new, div_xi] + list(xij))
