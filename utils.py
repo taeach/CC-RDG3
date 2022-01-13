@@ -1,5 +1,5 @@
 # Utilities
-# version 1.0 (2021/12/24)
+# version 1.1 (2022/01/13)
 
 import  os
 import  sys
@@ -34,8 +34,7 @@ COLOR_DICT:dict = {
     'DataLogger'    : BLUE,
     'DataProcessing': GREEN,
     'Optimizer'     : RED,
-    'OptimizerCore' : MAGENTA,
-    'RunOpt'        : BOLD
+    'OptimizerCore' : MAGENTA
 }
 ENCODING:str    = 'UTF-8'
 
@@ -46,13 +45,16 @@ def log(attrib_name:str|Callable, message:str, output:TextIOWrapper=sys.stdout, 
         attrib_name (str): Attribute name (e.g., class name, function name).
         message (str): Message for all positions.
         output (TextIOWrapper, optional): Output type. Defaults to sys.stdout.
-        color (str, optional): Color print ('color' or 'mono'). Defaults to 'color'.
+        color (str, optional): Color print ('color' or COLOR_NAME or 'mono'). Defaults to 'color'.
     '''
     if not isinstance(attrib_name,str):
         attrib_name = attrib_name.__class__.__name__
-    if color=='color':
-        color = COLOR_DICT[attrib_name] if attrib_name in COLOR_DICT.keys() else DEFAULT
-        print(f'{color}[{attrib_name}]{RESET} {message}', file=output)
+    if color!='mono':
+        if color=='color':
+            COLOR = COLOR_DICT[attrib_name] if attrib_name in COLOR_DICT.keys() else BOLD
+        else:
+            COLOR = color
+        print(f'{COLOR}[{attrib_name}]{RESET} {message}', file=output)
     else:
         print(f'[{attrib_name}] {message}', file=output)
 
