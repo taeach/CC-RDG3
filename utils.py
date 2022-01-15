@@ -1,5 +1,5 @@
 # Utilities
-# version 1.3 (2022/01/15)
+# version 1.4 (2022/01/15)
 
 import  os
 import  sys
@@ -217,9 +217,12 @@ class Stdio:
     def drawFigure(
         x:list[int,float,str],
         y:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        y2:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
         y_q25:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
         y_q75:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
+        x2:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
+        y2:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
+        y2_q25:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
+        y2_q75:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
         figsize:tuple[int,float]=(10,4),
         title:str|None=None,
         label:str|list[str]='line-1',
@@ -245,7 +248,7 @@ class Stdio:
         option:str='',
         option2:str='',
         colorbar:bool=False,
-        draw_type:str='plot',
+        draw_type:str|list[str]='plot',
         show:bool=False,
         save:bool=True,
         path_out:str|None=None,
@@ -255,7 +258,7 @@ class Stdio:
             draw plot/scatter figure
 
             - x : list(int,float,str)
-            - y, y2, y_q25, y_q75 : list(int,float), nd.array(1d,2d), pd.core.series.Series, None
+            - y, x2, y2, y_q25, y2_q25, y_q75, y2_q75 : list(int,float), nd.array(1d,2d), pd.core.series.Series, None
             - figsize : tuple(int,float)
             - title, xlabel, ylabel, ylabel2 : str, None
             - label, label2 : str, list(str)
@@ -295,7 +298,7 @@ class Stdio:
             assert isinstance(linestyle, str), 'Error: invalid linestyle {}.'.format(linestyle)
             assert isinstance(color, str), 'Error: invalid color {}.'.format(color)
             assert isinstance(label, str), 'Error: invalid label {}'.format(label)
-            eval('ax.{}(x, y, linestyle=linestyle, color=color, label=label {})'.format(draw_type, option))
+            eval(f'ax.{draw_type}(x, y, linestyle=linestyle, color=color, label=label {option})')
         elif y.ndim == 2:
             _linestyle = [linestyle]*y.shape[0] if isinstance(linestyle, str) else linestyle
             _color = [color]*y.shape[0] if isinstance(color, str) else color
@@ -313,12 +316,12 @@ class Stdio:
             for _i in range(y.shape[0]):
                 if _i==0 or y2 is None:
                     # label
-                    eval('ax.{}(_x[_i], y[_i], linestyle=_linestyle[_i], color=_color[_i], label=_label[_i] {})'.format(draw_type, option))
+                    eval(f'ax.{draw_type}(_x[_i], y[_i], linestyle=_linestyle[_i], color=_color[_i], label=_label[_i] {option})')
                 else:
                     # label-less
-                    eval('ax.{}(_x[_i], y[_i], linestyle=_linestyle[_i], color=_color[_i] {})'.format(draw_type, option))
+                    eval(f'ax.{draw_type}(_x[_i], y[_i], linestyle=_linestyle[_i], color=_color[_i] {option})')
         else:
-            print('Error: invalid y shape {}.'.format(y.shape), file=sys.stderr)
+            print(f'Error: invalid y shape {y.shape}.', file=sys.stderr)
 
         if isinstance(y_q25, (list,np.ndarray, pd.core.series.Series)) and isinstance(y_q75, (list,np.ndarray, pd.core.series.Series)):
             alpha = 0.1
@@ -330,19 +333,21 @@ class Stdio:
                 for _i in range(y.shape[0]):
                     ax.fill_between(x[_i], y_q25[_i], y_q75[_i], facecolor=color[_i], alpha=alpha)
             else:
-                print('Error: invalid y_q25 shape {} or y_q75 shape {}.'.format(y_q25.shape, y_q75.shape), file=sys.stderr)
+                print(f'Error: invalid y_q25 shape {y_q25.shape} or y_q75 shape {y_q75.shape}.', file=sys.stderr)
 
         if isinstance(y2, (list, np.ndarray, pd.core.series.Series)):
+            if isinstance(draw_type,str):
+                draw_type = [draw_type] *2
             # twin axes mode
             y2 = np.array(y2)
             ax2 = ax.twinx()
             draw_type = [draw_type]*2 if isinstance(draw_type, str) else draw_type
             if y2.ndim == 1:
-                assert len(x)==len(y2), 'Error: different between x length {} and y2 length {}.'.format(len(x), len(y2))
+                assert len(x2)==len(y2), 'Error: different between x2 length {} and y2 length {}.'.format(len(x2), len(y2))
                 assert isinstance(linestyle, str), 'Error: invalid linestyle {}.'.format(linestyle)
                 assert isinstance(color2, str), 'Error: invalid color {}.'.format(color2)
                 assert isinstance(label2, str), 'Error: invalid label {}'.format(label)
-                eval('ax2.{}(x, y2, linestyle=linestyle, color=color2, label=label2 {})'.format(draw_type[1], option2))
+                eval(f'ax2.{draw_type[1]}(x2, y2, linestyle=linestyle, color=color2, label=label2 {option2})')
             elif y2.ndim == 2:
                 _linestyle = [linestyle]*y2.shape[0] if isinstance(linestyle, str) else linestyle
                 _color2 = [color2]*y2.shape[0] if isinstance(color2, str) else color2
@@ -352,7 +357,7 @@ class Stdio:
                     if not cmap2_lim is None:
                         norm = cls.Normalize(vmin=cmap2_lim[0], vmax=cmap2_lim[1])
                         sm = plt.cm.ScalarMappable(norm=norm, cmap=cmap2)
-                _x = np.tile(x,(y2.shape[0],1)) if x.ndim == 1 else x
+                _x = np.tile(x2,(y2.shape[0],1)) if x2.ndim == 1 else x2
                 assert len(_linestyle)==y2.shape[0], 'Error: invalid linestyle {}.'.format(_linestyle)
                 assert len(_color2)==y2.shape[0], 'Error: invalid color {}.'.format(_color2)
                 assert len(_label2)==y.shape[0], 'Error: invalid label2 {}.'.format(_label2)
@@ -360,12 +365,24 @@ class Stdio:
                 for _i in range(y2.shape[0]):
                     if _i==0 or y is None:
                         # label
-                        eval('ax2.{}(_x[_i], y2[_i], linestyle=linestyle[_i], color=color2[_i], label=label2[_i] {})'.format(draw_type[1],option2))
+                        eval(f'ax2.{draw_type[1]}(_x[_i], y2[_i], linestyle=linestyle[_i], color=color2[_i], label=label2[_i] {option2})')
                     else:
                         # label-less
-                        eval('ax2.{}(_x[_i], y2[_i], linestyle=linestyle[_i], color=color2[_i] {})'.format(draw_type[1],option2))
+                        eval(f'ax2.{draw_type[1]}(_x[_i], y2[_i], linestyle=linestyle[_i], color=color2[_i] {option2})')
             else:
                 print('Error: invalid y2 shape {}.'.format(y2.shape), file=sys.stderr)
+            if isinstance(y2_q25, (list,np.ndarray, pd.core.series.Series)) and isinstance(y2_q75, (list,np.ndarray, pd.core.series.Series)):
+                alpha = 0.1
+                # fill_between
+                y2_q25, y2_q75 = np.array(y2_q25), np.array(y2_q75)
+                if y2_q25.ndim == 1 and y2_q75.ndim == 1 and y2_q25.size != 0 and y2_q75.size != 0:
+                    ax2.fill_between(x2, y2_q25, y2_q75, facecolor=color, alpha=alpha)
+                elif y_q25.ndim == 2 and y_q75.ndim == 2:
+                    for _i in range(y2.shape[0]):
+                        ax2.fill_between(x2[_i], y2_q25[_i], y2_q75[_i], facecolor=color[_i], alpha=alpha)
+                else:
+                    print('Error: invalid y2_q25 shape {} or y2_q75 shape {}.'.format(y2_q25.shape, y2_q75.shape), file=sys.stderr)
+
 
         if not title is None:
             assert isinstance(title, str), 'Error: invalid title {}.'.format(title)
@@ -401,7 +418,8 @@ class Stdio:
             if not y2 is None and not ylabel2 is None:
                 handler1, label1 = ax.get_legend_handles_labels()
                 handler2, label2 = ax2.get_legend_handles_labels()
-                ax.legend(handler1 + handler2, label1 + label2, loc=2, borderaxespad=0.)
+                ax.legend(handler1 + handler2, label1 + label2)
+                # ax.legend(handler1 + handler2, label1 + label2, loc=2, borderaxespad=0.)
             else:
                 ax.legend()
         if colorbar:
