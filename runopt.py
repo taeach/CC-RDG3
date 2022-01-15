@@ -1,7 +1,8 @@
 # Run Optimizer
-# version 1.5 (2022/01/14)
+# version 1.6 (2022/01/14)
 
 import time             as tm
+import warnings         as wn
 from typing             import Any
 import itertools        as it
 import numpy            as np
@@ -35,7 +36,7 @@ def runOpt(opt:Any, cnf:Configuration, fnc:Function, dlg:DataLogger, j:int=1) ->
         dlg.stopStopwatch()
         dlg.logging(opt, fnc.total_evals,j)
     dlg.outLog(opt, fnc.total_evals, j)
-    return dlg.exe_time
+    return opt, cnf, fnc, dlg
 
 
 ''' Run optimizer for Code Performance Profiler (1-trial) '''
@@ -92,6 +93,7 @@ def performanceChecker() -> None:
 def runAll() -> None:
     ''' Main Process for Debug (Series) for One Parameter
     '''
+    wn.simplefilter('ignore', FutureWarning)
     cnf = Configuration()
     dlg_settings = DataLogger(cnf)
     dlg_settings.outSetting('start',timer=False)
@@ -105,7 +107,7 @@ def runAll() -> None:
             dlg = DataLogger(cnf, cnf.prob_name[i])
             fnc = Function(cnf, cnf.prob_name[i], j)
             opt = optimizer(cnf,fnc,dlg)
-            exe_time.append(runOpt(opt, cnf, fnc, dlg, j))
+            exe_time.append(runOpt(opt, cnf, fnc, dlg, j)[3].exe_time)
             dlgs.append(dlg)
             fncs.append(fnc)
             opts.append(opt)
@@ -125,6 +127,7 @@ def runParallel(order:str='trial'):
     Args:
         order (str, optional): Order to run queue ('trial' or 'problem'). Defaults to 'trial'.
     '''
+    wn.simplefilter('ignore', FutureWarning)
     root_cnf = Configuration()
     root_cnf.addComment(f'root')
     dlg_settings = DataLogger(root_cnf)
@@ -194,11 +197,13 @@ def runParallel(order:str='trial'):
         dlgs[i][0].outSetting('start',stdout=False,timer=False)
 
     # parallel process
-    exe_time = Parallel(n_jobs=root_cnf.n_jobs)( [delayed(runOpt)(opts[p][n][trial], cnfs[p], fncs[p][n][trial], dlgs[p][n], root_cnf.initial_seed+trial)  for trial,n,p in zip(trial_queue,instance_queue,param_queue) ] )
+    update = Parallel(n_jobs=root_cnf.n_jobs)( [delayed(runOpt)(opts[p][n][trial], cnfs[p], fncs[p][n][trial], dlgs[p][n], root_cnf.initial_seed+trial)  for trial,n,p in zip(trial_queue,instance_queue,param_queue) ] )
+    for q,(trial,n,p) in enumerate(zip(trial_queue,instance_queue,param_queue)):
+        opts[p][n][trial], cnfs[p], fncs[p][n][trial], dlgs[p][n] = update[q]
 
     # end process
     for i in range(loop_num):
-        _exe_time = np.array(exe_time)[param_queue==i]
+        _exe_time = np.array([dlg.exe_time for dlg in dlgs[i]])
         dlgs[i][0].total_exe_time = int(_exe_time.sum())
         dlgs[i][0].average_exe_time = int(np.average(_exe_time))
         dlgs[i][0].outSetting('end',stdout=False,timer=False)
@@ -208,7 +213,7 @@ def runParallel(order:str='trial'):
     for i in range(loop_num):
         for j in range(len(root_cnf.prob_name)):
             DataProcessing(cnfs[i], fncs[i][j], dlgs[i][j], opts[i][j]).outProcessing()
-    del dlgs,fncs,opts
+    del dlgs,fncs,opts,cnfs
 
     # termination process
     dlg_settings.outSetting('end')

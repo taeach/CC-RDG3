@@ -1,5 +1,5 @@
 # Data Processing
-# version 1.2 (2022/01/13)
+# version 1.3 (2022/01/15)
 
 import os
 import sys
@@ -112,7 +112,7 @@ class DataProcessing:
                     _std.append(np.std(dtset))
 
                 # make dataframe
-                self.df_std = pd.DataFrame({
+                df_std = pd.DataFrame({
                     'min' : np.array(_min),
                     'q25' : np.array(_q25),
                     'med' : np.array(_med),
@@ -124,22 +124,22 @@ class DataProcessing:
 
                 # output database
                 path_fit_tbl = os.path.join(path_out,self.cnf.filename['result-stat'](self.prob_name,pfm))
-                Stdio.writeDatabase(self.df_std, path_fit_tbl, index=True)
+                Stdio.writeDatabase(df_std, path_fit_tbl, index=True)
                 log(self,f'Output {pfm} curve ({path_fit_tbl.split(os.path.sep)[-1]})')
 
                 # make best fitness curve (graph)
                 title = f'{pfm} Curve ({self.fnc.prob_name})'
                 xlabel, ylabel = 'FEs', pfm
                 path_fit_fig = os.path.join(path_out,self.cnf.filename['result-stat-image'](self.prob_name,pfm))
-                yscale = 'log' if ( self.df_std['q25'].min()!=0 and (self.df_std['q75'].max()/self.df_std['q25'].min()) > 10**2 )  else 'linear'
+                yscale = 'log' if ( df_std['q25'].min()!=0 and (df_std['q75'].max()/df_std['q25'].min()) > 10**2 )  else 'linear'
                 Stdio.drawFigure(
-                    x=self.df_std.index,
-                    y=self.df_std['med'],
-                    y_q25=self.df_std['q25'],
-                    y_q75=self.df_std['q75'],
+                    x=df_std.index,
+                    y=df_std['med'],
+                    y_q25=df_std['q25'],
+                    y_q75=df_std['q75'],
                     title=title,
                     xlim=(0,self.cnf.max_evals),
-                    ylim=0,
+                    # ylim=0,
                     yscale=yscale,
                     xlabel=xlabel,
                     ylabel=ylabel,
@@ -159,43 +159,47 @@ class DataProcessing:
             path_out = Stdio.makeDirectory(self.path_out_parent, self.cnf.dirname['population'], confirm=False)
             path_pop = os.path.join(self.path_dt, self.cnf.filename['result-pop'](self.trial))
             max_trial = Stdio.getNumberOfFiles(self.path_dt, self.cnf.filename['result-pop']('*'))
-            df = Stdio.readDatabase(path_pop)
+            df = Stdio.readDatabase(path_pop).dropna()
             if not df is None:
-                num_k = len(df['k'].drop_duplicates())
+                n_trials = len(df.index.drop_duplicates())
                 # Visualization (first-only, only self.trial)
                 if self.cnf.log['population']['visual']:
                     visual_type = 'tSNE'
                     position_columns = df.columns[df.columns.str.startswith('x')]
                     # t-SNE
-                    perplexities = [2, 5, 30, 50, 100]
+                    perplexities = (2, 5, 30, 50, 100)
+                    divs = tuple(df['div'].drop_duplicates())
                     for perplexity in perplexities:
-                        path_visual = os.path.join(path_out, self.cnf.filename['visual'](visual_type,self.prob_name,f'p={perplexity}'))
-                        title = f'{visual_type} 2-D Position p={perplexity} ({self.fnc.prob_name})'
-                        xlabel, ylabel = 'component-1', 'component-2'
-                        option = 'alpha=0.5'
-                        x_2d = TSNE(n_components=2, perplexity=perplexity).fit_transform(df[position_columns])
-                        assert len(df)%num_k == 0 , f'Error: index of the dataframe ({path_pop}) is invalid.'
-                        Stdio.drawFigure(
-                            x=x_2d[:,0].reshape(-1, num_k),
-                            y=x_2d[:,1].reshape(-1, num_k),
-                            figsize=(6,4),
-                            title=title,
-                            xlabel=xlabel,
-                            ylabel=ylabel,
-                            cmap=self.cmap_cont,
-                            cmap_lim=(df.index.min(), df.index.max()),
-                            option=option,
-                            colorbar=True,
-                            draw_type='scatter',
-                            path_out=path_visual
-                        )
-                        log(self,f'Output compress position by {visual_type} ({path_visual.split(os.path.sep)[-1]})')
+                        for div in divs:
+                            path_visual = os.path.join(path_out, self.cnf.filename['visual'](self.trial, visual_type,f'{self.prob_name}_p={perplexity}_div={div+1}'))
+                            title = f'{visual_type} 2-D Position  div={div+1} p={perplexity} ({self.fnc.prob_name})'
+                            xlabel, ylabel = 'component-1', 'component-2'
+                            option = 'alpha=0.5'
+                            df_div = df.query('div==0')[position_columns].dropna(how='all', axis=1)
+                            x_2d = TSNE(n_components=2, perplexity=perplexity, learning_rate='auto', init='random').fit_transform(df_div)
+                            assert len(df_div.columns)==self.opts[self.trial].dim[div] , f'Error: index of the dataframe ({path_pop}) is invalid.'
+                            Stdio.drawFigure(
+                                x=x_2d[:,0].reshape(-1, n_trials),
+                                y=x_2d[:,1].reshape(-1, n_trials),
+                                figsize=(6,4),
+                                title=title,
+                                xlabel=xlabel,
+                                ylabel=ylabel,
+                                cmap=self.cmap_cont,
+                                cmap_lim=(df.index.min(), df.index.max()),
+                                option=option,
+                                colorbar=True,
+                                draw_type='scatter',
+                                path_out=path_visual
+                            )
+                            log(self,f'Output compress position by {visual_type} ({os.path.basename(path_visual)})')
             else:
                 log(self, f'Error: Cannot read database pop ({path_pop}).', output=sys.stderr)
 
             # Best fitness and diversity curve (all trials)
             if self.cnf.log['population']['diversity']:
                 path_fitdiv = os.path.join(path_out, self.cnf.filename['fit-div'](self.trial, self.prob_name))
+                path_fitdiv_img = os.path.join(path_out, self.cnf.filename['fit-div-image'](self.trial, self.prob_name))
                 title = f'Best Fitness and Diversity Curve ({self.fnc.prob_name})'
                 xlabel, ylabel, ylabel2 = 'FEs', 'Fitness value', 'Diversity Measurement'
                 div_column_name = 'Diversity'
@@ -205,10 +209,11 @@ class DataProcessing:
                     path_div = os.path.join(self.path_dt, filename)
                     df_dvs = Stdio.readDatabase(path_div)
                     if not df_dvs is None:
+                        vals = df_dvs[div_column_name].groupby('FEs').mean()
                         if i == 1:
-                            df_fitdiv = pd.DataFrame({ filename : np.array(df_dvs[div_column_name])}, index = df_dvs.index)
+                            df_fitdiv = pd.DataFrame({ filename : np.array(vals)}, index = df_dvs.index.drop_duplicates())
                         else:
-                            df_fitdiv[filename] = np.array(df_dvs[div_column_name])
+                            df_fitdiv[filename] = np.array(vals)
                     else:
                         log(self, f'Error: Cannot read database fitdiv({path_div}).', output=sys.stderr)
                         break
@@ -230,19 +235,29 @@ class DataProcessing:
                         _std.append(np.std(_df))
                     # make dataframe
                     df_dvs = pd.DataFrame({
-                        'min' : np.array(_min),
-                        'q25' : np.array(_q25),
-                        'med' : np.array(_med),
-                        'q75' : np.array(_q75),
-                        'max' : np.array(_max),
-                        'ave' : np.array(_ave),
-                        'std' : np.array(_std)
+                        'dvs_min' : np.array(_min),
+                        'dvs_q25' : np.array(_q25),
+                        'dvs_med' : np.array(_med),
+                        'dvs_q75' : np.array(_q75),
+                        'dvs_max' : np.array(_max),
+                        'dvs_ave' : np.array(_ave),
+                        'dvs_std' : np.array(_std)
                         },index = df_fitdiv.index)
-
+                    path_fit_tbl = os.path.join(self.path_out_parent, self.cnf.dirname['standard'],self.cnf.filename['result-stat'](self.prob_name,'BestFitness'))
+                    df_std = Stdio.readDatabase(path_fit_tbl)
+                    df_std.set_axis([ f'bf_{col}' for col in df_std.columns], axis='columns')
+                    df_fitdiv = pd.merge(df_std, df_dvs, how='outer', left_index=True, right_index=True)
+                    df_fitdiv
+                    Stdio.writeDatabase(df_fitdiv, path_fitdiv, index=True)
                     Stdio.drawFigure(
-                        x=self.df_std.index,
-                        y=self.df_std['med'],
-                        y2=df_dvs['max'],
+                        x=df_std.index,
+                        y=df_std['med'],
+                        y_q25=df_std['q25'],
+                        y_q75=df_std['q75'],
+                        x2=df_dvs.index,
+                        y2=df_dvs['dvs_med'],
+                        y2_q25=df_dvs['dvs_q25'],
+                        y2_q75=df_dvs['dvs_q75'],
                         title=title,
                         label=ylabel,
                         label2=ylabel2,
@@ -250,11 +265,11 @@ class DataProcessing:
                         xlabel=xlabel,
                         ylabel=ylabel,
                         ylabel2=ylabel2,
-                        xlim=(self.df_std.index.min(),self.df_std.index.max()),
+                        xlim=(df_std.index.min(),df_std.index.max()),
                         yscale='log',
                         color='orange',
                         color2='green',
-                        path_out=path_fitdiv,
+                        path_out=path_fitdiv_img,
                         legend=True
                     )
                     log(self, f'Output best fitness and diversity curve ({path_fitdiv.split(os.path.sep)[-1]})', output=sys.stderr)

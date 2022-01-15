@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.5 (2022/01/13)
+# version 1.6 (2022/01/15)
 
 import os
 import sys
@@ -47,7 +47,7 @@ class DataLogger:
         if not prob_name is None:
             # for result log
             self.path_out = os.path.join(self.cnf.result_path, self.cnf.expname['result'], self.prob_name)
-            self.path_trial = Stdio.makeDirectory(self.path_out, self.cnf.dirname['trials'])
+            self.path_trial = Stdio.makeDirectory(self.path_out, self.cnf.dirname['trials'], confirm=False)
         else:
             # for settings_file
             self.path_trial = Stdio.makeDirectory(self.cnf.result_path, self.cnf.expname['result'])
@@ -149,6 +149,7 @@ class DataLogger:
             elif timing == 'end':
                 if timer:
                     self.stopStopwatch()
+                    self.total_exe_time += self.exe_time
                 # add EndTime and ExeTime
                 dif_time    = self.total_exe_time
                 dif_time_dict = {'day':0,'hour':0,'minute':0,'second':0}
@@ -184,6 +185,7 @@ class DataLogger:
                 # standard output
                 if stdout:
                     log(self, f'* Execution time : {self.total_exe_time}[sec]')
+
             else :
                 raise ValueError(f'Invalid argument timing={timing} in LogData.outSetting()')
 
@@ -277,7 +279,7 @@ class DataLogger:
                 pop_df = pd.DataFrame(self.pop_db, columns=pop_head)
                 path_pop = os.path.join(self.path_trial, self.cnf.filename['result-pop'](trial))
                 Stdio.writeDatabase(pop_df, path_pop)
-                log(self, f'Output population result ({os.path.basename(path_pop)})')
+                log(self, f'Output {self.prob_name} population result for {self.prob_name} ({os.path.basename(path_pop)})')
                 # Profile Report
                 if self.cnf.log['population']['report']:
                     from pandas_profiling import ProfileReport
@@ -285,7 +287,7 @@ class DataLogger:
                     profile = ProfileReport(pop_df, title=title, explorative=True)
                     path_profile = os.path.join(self.path_trial, self.cnf.filename['profile-report'](trial))
                     profile.to_file(output_file=path_profile)
-                    log(self, f'Output profile report ({os.path.basename(path_profile)})')
+                    log(self, f'Output profile report for {self.prob_name} ({os.path.basename(path_profile)})')
         # Reset database
         self.pop_db, self.pop_db = [], []
 
@@ -339,14 +341,14 @@ class DataLogger:
         if self.prob_dim is None:
             self.prob_dim = opt.fnc.prob_dim
         f_best = opt.init_fitness
-        # try:
-        for total_evals,f_new in enumerate(opt.f_log,start=1):
-            if opt.superior(f_new,f_best):
-                f_best = f_new
-            self.loggingSummaryStandard(opt, total_evals, trial, f_new, f_best)
-            self.loggingSummaryAdvanced(opt, total_evals, trial, f_new, f_best)
-        # except AttributeError:
-        #     pass
+        try:
+            for total_evals,f_new in enumerate(opt.f_log,start=1):
+                if opt.superior(f_new,f_best):
+                    f_best = f_new
+                self.loggingSummaryStandard(opt, total_evals, trial, f_new, f_best)
+                self.loggingSummaryAdvanced(opt, total_evals, trial, f_new, f_best)
+        except AttributeError:
+            pass
 
 
     def loggingSummaryStandard(self, opt:Callable, total_evals:int, trial:int, f_new:float, f_best:float) :
