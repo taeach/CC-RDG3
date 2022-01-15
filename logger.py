@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.7 (2022/01/15)
+# version 1.8 (2022/01/15)
 
 import os
 import sys
@@ -41,7 +41,6 @@ class DataLogger:
         # stdout digit
         self.trial_digit = len(str(self.cnf.max_trial))
         self.evals_digit = len(str(self.cnf.max_evals))
-        self.fitness_digit = 10
 
         # set path
         if not prob_name is None:
@@ -244,10 +243,8 @@ class DataLogger:
         ProbName = self.prob_name.ljust(13)
         Trial = str(trial).ljust(self.trial_digit)
         FEs = str(total_evals).rjust(self.evals_digit)
-        Fitness = str(f_new)[:self.fitness_digit].ljust(self.fitness_digit)
-        BestFitness = str(f_best)[:self.fitness_digit].ljust(self.fitness_digit)
         log(f'{ProbName}: trial-{Trial}',
-            f'FEs = {FEs}  |  Fitness = {Fitness}  |  BestFitness = {BestFitness}')
+            f'FEs = {FEs}  |  Fitness = {f_new:.6E}  |  BestFitness = {f_best:.6E}')
         # Reset database
         self.std_db= []
 
