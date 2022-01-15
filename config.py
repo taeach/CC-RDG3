@@ -1,5 +1,5 @@
 # Configuration
-# version 1.4 (2022/01/13)
+# version 1.5 (2022/01/15)
 
 import  os
 import  sys
@@ -120,15 +120,16 @@ class Configuration:
             # DataLogger
             'regular-log'   : lambda n,c: f'trial{n}_std({c}).xlsx',
             'result'        : lambda n: f'trial{n}_std.xlsx',
-            'result-pop'    : lambda n: f'trial{n}_pop.xlsx',
+            'result-pop'    : lambda n: f'trial{n}_pop.csv',       # Recommend:csv (xlsx extension may break)
             'profile-report': lambda n: f'trial{n}_profile-report.html',
             # DataProcessing
             'result-all'    : lambda p,i: f'all_trials_{i}_{p}.xlsx',
             'result-stat'   : lambda p,i: f'stat-{i}_{p}.xlsx',
             'result-stat-image': lambda p,i: f'stat-{i}_{p}.png',
             'grouping'      : lambda g: f'{g}.png',
-            'visual'        : lambda n,v,p,param: f'trial{n}_{v}_{p}_{param}.png',
-            'fit-div'       : lambda p: f'bestfit-divcurve_{p}.png'
+            'visual'        : lambda n,v,p: f'trial{n}_{v}_{p}.png',
+            'fit-div'       : lambda n,p: f'trial{n}_bestfit-divcurve_{p}.xlsx',
+            'fit-div-image' : lambda n,p: f'trial{n}_bestfit-divcurve_{p}.png'
         }
 
         ## path
@@ -160,9 +161,9 @@ class Configuration:
             'population'    : {
                 'out'       :   True,       # output mode
                 'n_sample'  :   400,        # sample number
-                'trial'     :   'first-only',# object of trial ( first-only / all )
-                'report'    :   True,       # output: profile report
-                'visual'    :   True,       # output: tSNE
+                'trial'     :   'all',# object of trial ( first-only / all )
+                'report'    :   False,      # output: profile report
+                'visual'    :   False,      # output: tSNE
                 'diversity' :   True        # output: diversity curve
             },
             # grouping image
@@ -230,12 +231,11 @@ class Configuration:
     def deleteFolders(self):
         # set absolute path
         root = os.getcwd()
-        log_path = os.path.join(root,self.dirname['log'])
         # delete folders path
         rem_paths = [os.path.join(root,self.dirname['result'],self.expname['result'])]
         # Parallel Process
         Parallel(n_jobs=self.n_jobs)( [delayed(self._deleteFolder)(rem_path)  for rem_path in rem_paths ] )
-        print('[Config] Delete Process Finished!')
+        print('[Config] Delete Root Folder.')
 
 
     @staticmethod

@@ -1,5 +1,5 @@
 # Data Logger
-# version 1.6 (2022/01/15)
+# version 1.7 (2022/01/15)
 
 import os
 import sys
@@ -341,14 +341,11 @@ class DataLogger:
         if self.prob_dim is None:
             self.prob_dim = opt.fnc.prob_dim
         f_best = opt.init_fitness
-        try:
-            for total_evals,f_new in enumerate(opt.f_log,start=1):
-                if opt.superior(f_new,f_best):
-                    f_best = f_new
-                self.loggingSummaryStandard(opt, total_evals, trial, f_new, f_best)
-                self.loggingSummaryAdvanced(opt, total_evals, trial, f_new, f_best)
-        except AttributeError:
-            pass
+        for total_evals,f_new in enumerate(opt.f_log,start=1):
+            if opt.superior(f_new,f_best):
+                f_best = f_new
+            self.loggingSummaryStandard(opt, total_evals, trial, f_new, f_best)
+            self.loggingSummaryAdvanced(opt, total_evals, trial, f_new, f_best)
 
 
     def loggingSummaryStandard(self, opt:Callable, total_evals:int, trial:int, f_new:float, f_best:float) :
