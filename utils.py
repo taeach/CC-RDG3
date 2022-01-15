@@ -1,5 +1,5 @@
 # Utilities
-# version 1.2 (2022/01/13)
+# version 1.3 (2022/01/15)
 
 import  os
 import  sys
@@ -131,6 +131,9 @@ class Stdio:
     def writeDatabase(df:pd.DataFrame, path_write:str, csv_or_xlsx:str=None, index:bool=False, header:bool=True) -> None:
         '''
             write Database (data frame) to csv/xlsx
+
+        Note:
+            Large file (10,000 or more rows/columns) -> xlsx extension may break.
         '''
         if csv_or_xlsx is None:
             # read extension
