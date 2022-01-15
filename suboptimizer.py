@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.7 (2022/01/12)
+# version 1.8 (2022/01/15)
 
 # standard library
 import sys
@@ -538,7 +538,8 @@ class PSO(OptimizerCore):
     def initializePopulation(self, pop:Population) -> Population:
         '''initialize all population
         '''
-        return super().initializePopulation(pop)
+        pop = super().initializePopulation(pop)
+        return pop
 
 
     def updateParameter(self) -> None:
@@ -555,8 +556,8 @@ class PSO(OptimizerCore):
         pop.x[_div][_pop] = self.__updatePosition(pop)
         pop.x_new = self.setCV(pop)
         pop.f_new = self.getFitness(pop.x_new)
+        pop.f[_div][_pop] = pop.f_new
         pop = self.updateBest(pop, pop.x_new, pop.f_new)
-        self.updateIndices('pop')
         return pop
 
 
@@ -582,9 +583,9 @@ class PSO(OptimizerCore):
         _div, _pop = self.getIndices
         subgroup, subdim = self.group[_div], self.dim[_div]
         # update velocity
-        v = self.params['inertia']*self.params['velocity'][_div][_pop]
-        + self.params['accel_g']*self.cnf.rd.rand(subdim)*(pop.x_best[subgroup]-pop.x[_div][_pop])
-        + self.params['accel_p']*self.cnf.rd.rand(subdim)*(self.params['x_pbest'][_div][_pop]-pop.x[_div][_pop])
+        v = self.params['inertia']*self.params['velocity'][_div][_pop] \
+            + self.params['accel_g']*self.cnf.rd.rand(subdim)*(pop.x_best[subgroup]-pop.x[_div][_pop])\
+            + self.params['accel_p']*self.cnf.rd.rand(subdim)*(self.params['x_pbest'][_div][_pop]-pop.x[_div][_pop])
         return v
 
 

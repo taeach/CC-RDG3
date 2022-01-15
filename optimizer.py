@@ -1,8 +1,7 @@
 # Optimizer
-# version 1.5 (2022/01/12)
+# version 1.6 (2022/01/15)
 
 import os
-import sys
 import time             as tm
 from typing             import Callable
 import math             as mt
@@ -16,9 +15,9 @@ from config             import Configuration
 from function           import Function
 from logger             import DataLogger
 
-# class CCEA(eval(Configuration().subopt_name)):
 ''' For VSCode Reference'''
-class CCEA(PSO):
+class CCEA(eval(Configuration().subopt_name)):
+# class CCEA(PSO):
     '''CCEA (Cooperative Co-Evolutionary Algorithm)
 
     Attributes:
@@ -46,7 +45,6 @@ class CCEA(PSO):
            (one-call -> one-evaluation)
         '''
         _div, _pop = self.getIndices
-        _pop = self.indices['pop']
         if _pop == 0:
             # set opt type
             self.setOptType(self.fnc.prob_name)
@@ -81,11 +79,11 @@ class CCEA(PSO):
         self.pop.x_new = self.linkSolution(self.pop)
         self.pop.f_new = self.getFitness(self.pop.x_new)
         self.init_evals = self.fnc.total_evals
-        # update x_best, f_best
-        self.pop = self.updateBest(self.pop, self.pop.x_new, self.pop.f_new)
-        # update indices
-        self.updateIndices('pop')
-        self.resetIndicesBy1cycle('pop')
+        while _pop == self.getIndices[1]:
+            # update x_best, f_best
+            self.pop = self.updateBest(self.pop, self.pop.x_new, self.pop.f_new)
+            # update indices
+            self.updateIndices('div')
 
 
     def update(self) -> None:
@@ -116,11 +114,12 @@ class CCEA(PSO):
         if grouping_fnc.__name__ in self.static_grouping + self.random_grouping:
             self.group_path = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_dim}D_{self.cnf.max_div}div'))
         elif grouping_fnc.__name__ in self.dynamic_grouping:
-            self.group_path = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_name}'))
+            self.group_path = os.path.join(group_dir, self.cnf.filename['group'](f'{self.cnf.group_name}_{self.fnc.prob_name}_{self.cnf.prob_env_noise.upper()}'))
         if not self.cnf.deterministic_grouping and not grouping_fnc.__name__ in self.static_grouping:
             path, ext = os.path.splitext(self.group_path)
             self.group_path = f'{path}_seed={self.cnf.seed}{ext}'
 
+        self.f_log = []
         # Not exist group file -> Calculate and output group file
         if not os.path.isfile(self.group_path):
             log(self, f'Calculate group by {self.cnf.group_name} ({os.path.basename(self.group_path)}) ...')
