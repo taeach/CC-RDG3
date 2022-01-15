@@ -1,5 +1,5 @@
 # Sub Optimizer
-# version 1.8 (2022/01/15)
+# version 1.9 (2022/01/15)
 
 # standard library
 import sys
@@ -174,7 +174,7 @@ class OptimizerCore:
                     ]
             case _:
                 log(self,f'Error: Invalid init_method "{self.cnf.init_method}"')
-        pop.f = np.full((pop_size, self.max_div), self.init_fitness)
+        pop.f = np.full((self.max_div,pop_size), self.init_fitness)
         pop.x_best = np.full(dim,np.nan)
         pop.f_best = self.init_fitness
         return pop
@@ -529,7 +529,7 @@ class PSO(OptimizerCore):
         init_velocity:float = 0.
         self.params['velocity'] = [ np.full((self.cnf.max_pop, subdim), init_velocity) for subdim in self.dim ]
         self.params['x_pbest'] = [ np.full((self.cnf.max_pop, subdim), np.nan) for subdim in self.dim ]
-        self.params['f_pbest'] = [ np.full(self.cnf.max_pop, self.init_fitness) for subdim in self.dim ]
+        self.params['f_pbest'] = np.full((self.max_div,self.cnf.max_pop), self.init_fitness)
         self.params['inertia'] = self.cnf.inertia
         self.params['accel_g'] = self.cnf.accel_g
         self.params['accel_p'] = self.cnf.accel_p

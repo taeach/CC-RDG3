@@ -1,5 +1,5 @@
 # Optimizer
-# version 1.6 (2022/01/15)
+# version 1.7 (2022/01/15)
 
 import os
 import time             as tm
@@ -92,7 +92,7 @@ class CCEA(eval(Configuration().subopt_name)):
         '''
         self.updateParameter()
         self.pop = self.updatePopulation(self.pop)
-        self.updateIndices()
+        self.updateIndices('pop')
 
 
     def grouping(self, grouping_fnc:Callable) -> tuple[np.ndarray, np.ndarray]:
