@@ -1,5 +1,5 @@
 # Utilities
-# version 1.4 (2022/01/15)
+# version 1.5 (2022/01/15)
 
 import  os
 import  sys
@@ -430,10 +430,10 @@ class Stdio:
             assert isinstance(path_out, str), 'Error: invalid path_out {}'.format(path_out)
             fig.savefig(path_out, dpi=dpi)
         if output:
-            try:
-                return fig,ax,ax2
-            except:
+            if ax2 is None:
                 return fig,ax
+            else:
+                return fig,ax,ax2
         plt.close()
 
 

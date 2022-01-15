@@ -1,5 +1,5 @@
 # Data Processing
-# version 1.3 (2022/01/15)
+# version 1.4 (2022/01/15)
 
 import os
 import sys
@@ -132,7 +132,7 @@ class DataProcessing:
                 xlabel, ylabel = 'FEs', pfm
                 path_fit_fig = os.path.join(path_out,self.cnf.filename['result-stat-image'](self.prob_name,pfm))
                 yscale = 'log' if ( df_std['q25'].min()!=0 and (df_std['q75'].max()/df_std['q25'].min()) > 10**2 )  else 'linear'
-                Stdio.drawFigure(
+                fig,ax = Stdio.drawFigure(
                     x=df_std.index,
                     y=df_std['med'],
                     y_q25=df_std['q25'],
@@ -144,8 +144,13 @@ class DataProcessing:
                     xlabel=xlabel,
                     ylabel=ylabel,
                     grid=True,
-                    path_out=path_fit_fig
+                    save=False,
+                    output=True
                 )
+                _ymin,_ymax = ax.get_ylim()
+                grouping_FEs = list(set([ opt.init_evals for opt in self.opts]) - {0})
+                ax.vlines(x=grouping_FEs, ymin=_ymin, ymax=_ymax, colors='red', linestyles='dotted')
+                fig.savefig(path_fit_fig, dpi=300)
                 log(self,f'Output {pfm} curve ({path_fit_fig.split(os.path.sep)[-1]})')
             else:
                 log(self, f'Error: Cannot read database std ({self.path_trials}).', output=sys.stderr)
@@ -249,7 +254,7 @@ class DataProcessing:
                     df_fitdiv = pd.merge(df_std, df_dvs, how='outer', left_index=True, right_index=True)
                     df_fitdiv
                     Stdio.writeDatabase(df_fitdiv, path_fitdiv, index=True)
-                    Stdio.drawFigure(
+                    fig,ax,ax2 = Stdio.drawFigure(
                         x=df_std.index,
                         y=df_std['med'],
                         y_q25=df_std['q25'],
@@ -269,9 +274,14 @@ class DataProcessing:
                         yscale='log',
                         color='orange',
                         color2='green',
-                        path_out=path_fitdiv_img,
-                        legend=True
+                        legend=True,
+                        save=False,
+                        output=True
                     )
+                    _ymin,_ymax = ax.get_ylim()
+                    grouping_FEs = list(set([ opt.init_evals for opt in self.opts]) - {0})
+                    ax.vlines(x=grouping_FEs, ymin=_ymin, ymax=_ymax, colors='red', linestyles='dotted')
+                    fig.savefig(path_fitdiv_img, dpi=300)
                     log(self, f'Output best fitness and diversity curve ({path_fitdiv.split(os.path.sep)[-1]})', output=sys.stderr)
                 else:
                     log(self, f'Error: Cannot read database pop ({path_pop}).', output=sys.stderr)
