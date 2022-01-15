@@ -1,0 +1,6 @@
+# VSCode file
+__pycache__/
+
+# Experiment result
+_group/
+_result/
