@@ -15,8 +15,9 @@ from config             import Configuration
 from function           import Function
 from logger             import DataLogger
 
-''' For VSCode Reference'''
+
 class CCEA(eval(Configuration().subopt_name)):
+# For VSCode Reference
 # class CCEA(PSO):
     '''CCEA (Cooperative Co-Evolutionary Algorithm)
 
@@ -179,17 +180,18 @@ if __name__ == '__main__':
     # (1) working directory movement
     from utils import Stdio
     Stdio.moveWorkingDirectory()
-
     cnf = Configuration()
-    log_settings = DataLogger(cnf)
-
-    i,j = 0,0
+    # settings
+    cnf.max_evals = 100
+    cnf.prob_name = 'LSGO2013_F1'
     seed = 1
-    dlg = DataLogger(cnf, cnf.prob_name[i])
-    fnc = Function(cnf, cnf.prob_name[i])
+    dlg = DataLogger(cnf, cnf.prob_name)
+    fnc = Function(cnf, cnf.prob_name)
     opt = eval(f'{cnf.opt_name}(cnf, fnc, dlg)')
     cnf.setRandomSeed(seed)
-    # initialize optimizer
-    opt.initialize()
-    opt.update()
 
+    for k in range(cnf.max_pop):
+        opt.initialize()
+    cnf.max_evals += opt.init_evals
+    while fnc.total_evals < cnf.max_evals :
+        opt.update()

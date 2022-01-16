@@ -132,16 +132,12 @@ class Configuration:
             'fit-div-image' : lambda n,p: f'trial{n}_bestfit-divcurve_{p}.png'
         }
 
-        ## path
-        nas_root    = r'Yoshikawa\CCRDG3-PSO'
         ## output root path
         paths       = {
             # current directory from Terminal
             'current'   : os.getcwd(),
             # parent directory from this file
-            'pardir'    : os.path.dirname(__file__),
-            # nas folder
-            'nas'       : rf'\\192.168.11.2\nktlab\Desktop\Experiment\{nas_root}'
+            'pardir'    : os.path.dirname(__file__)
         }
         ### path output
         self.path_out   = paths['pardir']
@@ -161,7 +157,7 @@ class Configuration:
             'population'    : {
                 'out'       :   True,       # output mode
                 'n_sample'  :   400,        # sample number
-                'trial'     :   'all',# object of trial ( first-only / all )
+                'trial'     :   'all',      # object of trial ( first-only / all )
                 'report'    :   False,      # output: profile report
                 'visual'    :   False,      # output: tSNE
                 'diversity' :   True        # output: diversity curve

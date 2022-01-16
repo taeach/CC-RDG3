@@ -451,7 +451,7 @@ class Stdio:
         body = [head, error_content]
         # confirm path
         if os.path.isfile(error_path_out):
-                os.remove(error_path_out)
+            os.remove(error_path_out)
         # output file
         with open( error_path_out , 'x', encoding=file_encoding ) as f :
             f.writelines('\n'.join(body))
