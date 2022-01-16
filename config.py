@@ -30,7 +30,7 @@ class Configuration:
         '''
 
         # Development Version
-        self.version                = '3.5'
+        self.version                = '1.0'
 
         # Problem (Function)
         prob_sets      = {
