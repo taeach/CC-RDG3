@@ -142,7 +142,8 @@ class CCEA(eval(Configuration().subopt_name)):
             # output file
             if not os.path.isdir(group_dir):
                 os.makedirs(group_dir)
-            Stdio.writeDatabase(df, self.group_path)
+            if not os.path.isfile(self.group_path):
+                Stdio.writeDatabase(df, self.group_path)
         # Exist group file -> Import
         else:
             log(self, f'Import group from {os.path.basename(self.group_path)} ...')
