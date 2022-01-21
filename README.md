@@ -3,14 +3,14 @@
 
 ## 1.実行環境
 - OS : Windows 10/11, Mac OS
-- プログラミング言語 : Python 3.10 以上
+- プログラミング言語 : Python 3.9 以上
 
 ### 1-1.必要なモジュールのインストール方法
 - `config.py`をメインにして実行すると、モジュールがインストールされます。
 - コマンドでのインストール方法は以下のとおりです。
   - Windows
   ```python
-  py -3.10 -m pip install -r _config/module.txt
+  py -3.9 -m pip install -r _config/module.txt
   ```
   - Mac OS
   ```python

@@ -9,7 +9,7 @@ import  platform    as pf
 import  traceback   as tb
 import  shutil      as st
 import  glob        as gl
-from typing import Callable
+from typing import Callable, Union
 import  numpy       as np
 import  pandas      as pd
 from matplotlib     import pyplot   as plt
@@ -39,7 +39,7 @@ COLOR_DICT:dict = {
 ENCODING:str    = 'UTF-8'
 
 
-def log(attrib_name:str|Callable, message:str, output:TextIOWrapper=sys.stdout, color:str='color') -> None:
+def log(attrib_name:Union[str,Callable], message:str, output:TextIOWrapper=sys.stdout, color:str='color') -> None:
     '''Logging (instead of "print()")
     Args:
         attrib_name (str): Attribute name (e.g., class name, function name).
@@ -148,7 +148,7 @@ class Stdio:
             df.to_csv(path_write, index=index, header=header)
 
     @staticmethod
-    def readDatabase(path_read:str, index_col:int|None=0, header:int|None=0, names:tuple|list|None=None) -> pd.DataFrame:
+    def readDatabase(path_read:str, index_col:Union[int,None]=0, header:Union[int,None]=0, names:Union[tuple,list,None]=None) -> pd.DataFrame:
         '''
             read Database (DataFrame) from csv/xlsx
             * You can get variable length csv as DataFrame when you assign optional parameters "names".
@@ -195,7 +195,7 @@ class Stdio:
             return -1
 
     @staticmethod
-    def saveExperimentalData(path_out:str, data_dict:dict, file_name:str|None=None, seed:int=0, csv_or_xlsx:str='csv', display='vertical'):
+    def saveExperimentalData(path_out:str, data_dict:dict, file_name:Union[str,None]=None, seed:int=0, csv_or_xlsx:str='csv', display='vertical'):
         '''save experimental data
         '''
         if file_name is None:
@@ -216,42 +216,42 @@ class Stdio:
     @staticmethod
     def drawFigure(
         x:list[int,float,str],
-        y:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        y_q25:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        y_q75:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        x2:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        y2:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        y2_q25:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
-        y2_q75:list[int,float]|np.ndarray|pd.core.series.Series|None=None,
+        y:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
+        y_q25:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
+        y_q75:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
+        x2:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
+        y2:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
+        y2_q25:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
+        y2_q75:Union[list[int,float],np.ndarray,pd.core.series.Series,None]=None,
         figsize:tuple[int,float]=(10,4),
-        title:str|None=None,
-        label:str|list[str]='line-1',
-        label2:str|list[str]='line-2',
-        xlim:tuple[int,float]|list[int,float]|np.ndarray=None,
-        ylim:tuple[int,float]|list[int,float]|np.ndarray=None,
-        ylim2:tuple[int,float]|list[int,float]|np.ndarray=None,
-        xlabel:str|None=None,
-        ylabel:str|None=None,
-        ylabel2:str|None=None,
+        title:Union[str,None]=None,
+        label:Union[str,list[str]]='line-1',
+        label2:Union[str,list[str]]='line-2',
+        xlim:Union[tuple[int,float],list[int,float],np.ndarray]=None,
+        ylim:Union[tuple[int,float],list[int,float],np.ndarray]=None,
+        ylim2:Union[tuple[int,float],list[int,float],np.ndarray]=None,
+        xlabel:Union[str,None]=None,
+        ylabel:Union[str,None]=None,
+        ylabel2:Union[str,None]=None,
         xscale:str='linear',
         yscale:str='linear',
         grid:bool=False,
         grid2:bool=False,
         legend:bool=False,
-        linestyle:str|list[str]='-',
-        color:str|list[str]='blue',
-        color2:str|list[str]='orange',
-        cmap:cls.Colormap|None=None,
-        cmap_lim:tuple|list|None=None,
-        cmap2:cls.Colormap|None=None,
-        cmap2_lim:tuple|list|None=None,
+        linestyle:Union[str,list[str]]='-',
+        color:Union[str,list[str]]='blue',
+        color2:Union[str,list[str]]='orange',
+        cmap:Union[cls.Colormap,None]=None,
+        cmap_lim:Union[tuple,list,None]=None,
+        cmap2:Union[cls.Colormap,None]=None,
+        cmap2_lim:Union[tuple,list,None]=None,
         option:str='',
         option2:str='',
         colorbar:bool=False,
-        draw_type:str|list[str]='plot',
+        draw_type:Union[str,list[str]]='plot',
         show:bool=False,
         save:bool=True,
-        path_out:str|None=None,
+        path_out:Union[str,None]=None,
         dpi:int=300,
         output:bool=False):
         '''

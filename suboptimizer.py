@@ -3,11 +3,12 @@
 
 # standard library
 import sys
-import math             as mt
+import math     as mt
 # additional library
-import numpy            as np
-import pandas           as pd
-from utils              import log
+import numpy    as np
+import pandas   as pd
+from utils      import log
+from typing     import Union
 ''' For Function Annotations '''
 from config     import Configuration
 from function   import Function
@@ -109,7 +110,7 @@ class OptimizerCore:
             sys.exit(1)
 
 
-    def getFitness(self, x:list|tuple|np.ndarray, logging:bool=False) -> tuple|float :
+    def getFitness(self, x:Union[list,tuple,np.ndarray], logging:bool=False) -> Union[tuple,float] :
         '''get single/multi fitness value
 
         Args:
@@ -163,17 +164,16 @@ class OptimizerCore:
         # initialize population
         assert dim == axis_range.shape[0], 'Error: Dimension does not match.'
         assert len(self.dim) == self.max_div, f'Error: Internal variable len(subdim) "{len(self.dim)}" != max_div "{self.max_div}".'
-        match self.cnf.init_method:
-            case 'random':
-                pop.x = [self.cnf.rd.uniform(lb[subgroup], ub[subgroup], (pop_size, subdim)) for subgroup,subdim in zip(self.group,self.dim)]
-            case 'lhs':
-                from pyDOE import lhs
-                pop.x = [
-                    lb[subgroup] + (ub[subgroup] - lb[subgroup]) * lhs(subdim,pop_size,'c')
-                    for subgroup,subdim in zip(self.group,self.dim)
-                    ]
-            case _:
-                log(self,f'Error: Invalid init_method "{self.cnf.init_method}"')
+        if self.cnf.init_method == 'random':
+            pop.x = [self.cnf.rd.uniform(lb[subgroup], ub[subgroup], (pop_size, subdim)) for subgroup,subdim in zip(self.group,self.dim)]
+        elif self.cnf.init_method =='lhs':
+            from pyDOE import lhs
+            pop.x = [
+                lb[subgroup] + (ub[subgroup] - lb[subgroup]) * lhs(subdim,pop_size,'c')
+                for subgroup,subdim in zip(self.group,self.dim)
+                ]
+        else:
+            log(self,f'Error: Invalid init_method "{self.cnf.init_method}"')
         pop.f = np.full((self.max_div,pop_size), self.init_fitness)
         pop.x_best = np.full(dim,np.nan)
         pop.f_best = self.init_fitness

@@ -4,6 +4,7 @@
 import os
 import math     as mt
 import numpy    as np
+from typing     import Union
 from utils      import log
 
 ''' For Function Annotations '''
@@ -438,7 +439,7 @@ class Function:
         # ret = np.array([ x[i]  if x[i] < 0. else ( x[i] ** ( 1. + beta * i / ( dim - 1.) * x[i]**(1/2) ) )  for i in range(dim) ])
         return ret
 
-    def Lambda(self, alpha:int|float, dim:int=1000):
+    def Lambda(self, alpha:Union[int,float], dim:int=1000):
         '''Noise Generator (Create ill-conditioning)
 
         Args:

@@ -6,7 +6,7 @@
 		}
 	],
 	"settings": {
-		// Python 3.10 or newer
-		"python.pythonPath": "py -3.10"
+		// Python 3.9 or newer
+		"python.pythonPath": "py -3.9"
 	}
 }
